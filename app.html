@@ -50,6 +50,10 @@
         <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 1 0 10 10h-2a8 8 0 1 1-8-8zm1 5v6l5 3-1 1.7-6-3.7V7z"/></svg>
         Activity Log
       </button>
+      <button class="nav-item admin-only" data-view="archives">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 3h18v4H3zm1 6h16v11H4zm4 3v2h8v-2z"/></svg>
+        Archives
+      </button>
 
       <div class="side-foot">
         <div class="side-user">
@@ -120,7 +124,7 @@
             </div>
             <div class="table-wrap">
               <table class="data" id="patientsTable">
-                <thead><tr><th>Patient No</th><th>Name</th><th>Age</th><th>Gender</th><th>Referred By</th><th>Registered</th></tr></thead>
+                <thead><tr><th>Patient No</th><th>Name</th><th>Age</th><th>Gender</th><th>Referred By</th><th>Registered</th><th class="admin-only">Actions</th></tr></thead>
                 <tbody></tbody>
               </table>
             </div>
@@ -259,6 +263,26 @@
             </div>
           </div>
         </section>
+
+        <section class="view hide" id="view-archives">
+          <div class="panel">
+            <div class="panel-head">
+              <h3>Archives</h3>
+              <div class="sp tools">
+                <input class="input search" id="archiveSearch" placeholder="Search name or reference..." autocomplete="off">
+                <button class="btn btn-ghost" id="archiveRefreshBtn">
+                  <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 4V1L8 5l4 4V6a6 6 0 1 1-6 6H4a8 8 0 1 0 8-8z"/></svg> Refresh
+                </button>
+              </div>
+            </div>
+            <div class="table-wrap">
+              <table class="data" id="archivesTable">
+                <thead><tr><th>Type</th><th>Reference</th><th>Name</th><th>Details</th><th>Archived</th><th>Actions</th></tr></thead>
+                <tbody></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
       </div>
     </div>
   </div>
@@ -270,7 +294,7 @@
   <!-- Patient form -->
   <div class="overlay" id="modalPatient">
     <form class="modal" id="patientForm">
-      <div class="modal-head"><h3>New Patient</h3><button type="button" class="x-btn" data-close><svg viewBox="0 0 24 24" fill="currentColor"><path d="M18.3 5.7 12 12l-6.3-6.3-1.4 1.4L10.6 13l-6.3 6.3 1.4 1.4L12 14.4l6.3 6.3 1.4-1.4L13.4 13l6.3-6.3z"/></svg></button></div>
+      <div class="modal-head"><h3 id="patientModalTitle">New Patient</h3><button type="button" class="x-btn" data-close><svg viewBox="0 0 24 24" fill="currentColor"><path d="M18.3 5.7 12 12l-6.3-6.3-1.4 1.4L10.6 13l-6.3 6.3 1.4 1.4L12 14.4l6.3 6.3 1.4-1.4L13.4 13l6.3-6.3z"/></svg></button></div>
       <div class="modal-body">
         <div class="form-grid">
           <label class="f full">Full Name<input class="input" name="full_name" required placeholder="Juan Dela Cruz"></label>
@@ -338,6 +362,7 @@
       <div class="modal-body" id="recBody"></div>
       <div class="modal-foot">
         <button type="button" class="btn btn-ghost" data-close>Close</button>
+        <button type="button" class="btn btn-ghost admin-only" id="recEditBtn">Edit Details</button>
         <button type="button" class="btn btn-green" id="recPrintBtn">
           <svg viewBox="0 0 24 24" fill="currentColor"><path d="M19 8H5a3 3 0 0 0-3 3v6h4v4h12v-4h4v-6a3 3 0 0 0-3-3zm-3 11H8v-5h8zm3-7a1 1 0 1 1 1-1 1 1 0 0 1-1 1zM18 3H6v4h12z"/></svg> Print Record
         </button>
@@ -385,6 +410,19 @@
     </form>
   </div>
 
+  <!-- Confirm dialog (reusable) -->
+  <div class="overlay" id="modalConfirm">
+    <div class="modal confirm-modal">
+      <div class="confirm-ico" id="cfmIco"></div>
+      <h3 id="cfmTitle">Are you sure?</h3>
+      <p class="confirm-msg" id="cfmMsg"></p>
+      <div class="confirm-foot">
+        <button type="button" class="btn btn-ghost" data-close>Cancel</button>
+        <button type="button" class="btn btn-primary" id="cfmOk">Confirm</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Receipt / lab slip -->
   <div class="overlay" id="modalReceipt">
     <div class="modal">
@@ -426,6 +464,7 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.118.0/dist/umd/supabase.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
   <script src="js/config.js"></script>
   <script src="js/app.js"></script>
 </body>

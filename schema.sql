@@ -38,9 +38,14 @@ drop function if exists public.list_employees(uuid);
 drop function if exists public.create_employee(uuid, text, text, text, text);
 drop function if exists public.update_employee(uuid, uuid, text, text, text);
 drop function if exists public.set_employee_active(uuid, uuid, boolean);
+drop function if exists public.delete_employee(uuid, uuid);
+drop function if exists public.set_archived(uuid, text, uuid, boolean);
+drop function if exists public.list_archived(uuid);
+drop function if exists public.delete_archived(uuid, text, uuid);
 drop function if exists public.list_services(uuid);
 drop function if exists public.upsert_service(uuid, uuid, text, text, numeric);
 drop function if exists public.create_patient(uuid, text, integer, text, text, text, text);
+drop function if exists public.update_patient(uuid, uuid, text, integer, text, text, text, text);
 drop function if exists public.search_patients(uuid, text);
 drop function if exists public.get_patient_record(uuid, uuid);
 drop function if exists public.create_visit(uuid, uuid, jsonb);
@@ -97,7 +102,8 @@ create table if not exists public.patients (
   contact       text,
   referred_by   text,
   registered_by uuid references public.employees(id) on delete set null,
-  registered_at timestamptz not null default now()
+  registered_at timestamptz not null default now(),
+  archived_at   timestamptz
 );
 
 create sequence if not exists public.patient_seq start 1;
@@ -115,7 +121,8 @@ create table if not exists public.visits (
   paid_at      timestamptz,
   lab_at       timestamptz,
   completed_at timestamptz,
-  refunded_at  timestamptz
+  refunded_at  timestamptz,
+  archived_at  timestamptz
 );
 
 create sequence if not exists public.visit_seq start 1;
@@ -165,6 +172,7 @@ alter table public.patients add column if not exists contact       text;
 alter table public.patients add column if not exists referred_by   text;
 alter table public.patients add column if not exists registered_by uuid;
 alter table public.patients add column if not exists registered_at timestamptz default now();
+alter table public.patients add column if not exists archived_at   timestamptz;
 
 alter table public.visits add column if not exists visit_no     text;
 alter table public.visits add column if not exists patient_id   uuid;
@@ -177,6 +185,7 @@ alter table public.visits add column if not exists paid_at      timestamptz;
 alter table public.visits add column if not exists lab_at       timestamptz;
 alter table public.visits add column if not exists completed_at timestamptz;
 alter table public.visits add column if not exists refunded_at  timestamptz;
+alter table public.visits add column if not exists archived_at  timestamptz;
 
 alter table public.visit_items add column if not exists visit_id   uuid;
 alter table public.visit_items add column if not exists service_id uuid;
@@ -418,11 +427,12 @@ begin
   end if;
   return query
     select pt.* from public.patients pt
-     where p_query = ''
+     where pt.archived_at is null
+       and (p_query = ''
         or lower(pt.full_name) like '%' || lower(p_query) || '%'
         or lower(pt.patient_no) like '%' || lower(p_query) || '%'
         or lower(coalesce(pt.address,'')) like '%' || lower(p_query) || '%'
-        or lower(coalesce(pt.referred_by,'')) like '%' || lower(p_query) || '%'
+        or lower(coalesce(pt.referred_by,'')) like '%' || lower(p_query) || '%')
      order by pt.registered_at desc
      limit 200;
 end; $$;
@@ -462,6 +472,8 @@ create or replace function public.create_visit(p_actor uuid, p_patient_id uuid, 
 returns json
 language plpgsql security definer set search_path = public, extensions as $$
 declare v_visit public.visits; v_total numeric(12,2) := 0; it jsonb;
+        v_admin boolean; v_price numeric; v_cat numeric; v_srv_id uuid; v_name text;
+        v_fixed jsonb := '[]'::jsonb;
 begin
   if not exists (select 1 from public.employees e where e.id = p_actor and e.is_active) then
     raise exception 'Please sign in again.';
@@ -470,15 +482,29 @@ begin
     raise exception 'Please select at least one service.';
   end if;
 
+  v_admin := public.fn_is_admin(p_actor);
+
+  -- Prices always come from the catalog. Only the administrator may override them.
   for it in select * from jsonb_array_elements(p_items) loop
-    v_total := v_total + coalesce((it->>'price')::numeric, 0);
+    v_srv_id := nullif(it->>'service_id','')::uuid;
+    v_name   := coalesce(it->>'name','Service');
+    v_price  := coalesce((it->>'price')::numeric, 0);
+    if not v_admin and v_srv_id is not null then
+      v_cat := null;
+      select s.price, s.name into v_cat, v_name from public.services s where s.id = v_srv_id;
+      if v_cat is not null then v_price := v_cat; end if;
+      if v_name is null then v_name := coalesce(it->>'name','Service'); end if;
+    end if;
+    v_total := v_total + v_price;
+    v_fixed := v_fixed || jsonb_build_array(
+      jsonb_build_object('service_id', v_srv_id, 'name', v_name, 'price', v_price));
   end loop;
 
   insert into public.visits (visit_no, patient_id, status, total, created_by)
   values ('V-' || lpad(nextval('public.visit_seq')::text, 5, '0'), p_patient_id, 'pending_payment', v_total, p_actor)
   returning * into v_visit;
 
-  for it in select * from jsonb_array_elements(p_items) loop
+  for it in select * from jsonb_array_elements(v_fixed) loop
     insert into public.visit_items (visit_id, service_id, name, price)
     values (
       v_visit.id,
@@ -583,7 +609,8 @@ begin
       from public.visits v
       join public.patients p on p.id = v.patient_id
       left join public.employees e on e.id = v.created_by
-     where p_filter = 'all' or v.status = p_filter
+     where v.archived_at is null
+       and (p_filter = 'all' or v.status = p_filter)
      order by v.created_at desc
      limit 200;
 end; $$;
@@ -990,6 +1017,106 @@ begin
     (case when p_active then 'Enabled' else 'Disabled' end) || ' account "' || coalesce(v_un, p_id::text) || '"');
 end; $$;
 
+-- Admin only: permanently delete an account (its past records are kept; the
+-- references just become unassigned via ON DELETE SET NULL).
+create or replace function public.delete_employee(p_actor uuid, p_id uuid)
+returns void
+language plpgsql security definer set search_path = public, extensions as $$
+declare v_un text; v_role text;
+begin
+  if not public.fn_is_admin(p_actor) then
+    raise exception 'Only the administrator can delete accounts.';
+  end if;
+  if p_id = p_actor then
+    raise exception 'You cannot delete your own account.';
+  end if;
+  select e.username, e.role into v_un, v_role from public.employees e where e.id = p_id;
+  if v_un is null then
+    raise exception 'Account not found.';
+  end if;
+  if v_role = 'admin'
+     and (select count(*) from public.employees e where e.role = 'admin') <= 1 then
+    raise exception 'You cannot delete the last administrator.';
+  end if;
+  perform public.fn_log(p_actor, 'employee_delete', 'Deleted account "' || v_un || '"');
+  delete from public.employees where id = p_id;
+end; $$;
+
+-- ---- Archive (soft store): archived records leave the active lists but are
+-- ---- kept here until an admin restores or permanently deletes them --------
+create or replace function public.set_archived(p_actor uuid, p_type text, p_id uuid, p_archived boolean)
+returns void
+language plpgsql security definer set search_path = public, extensions as $$
+declare v_label text;
+begin
+  if not public.fn_is_admin(p_actor) then
+    raise exception 'Only the administrator can archive or restore records.';
+  end if;
+  if p_type = 'patient' then
+    update public.patients set archived_at = case when p_archived then now() else null end
+      where id = p_id returning patient_no || ' - ' || full_name into v_label;
+  elsif p_type = 'visit' then
+    update public.visits set archived_at = case when p_archived then now() else null end
+      where id = p_id returning visit_no into v_label;
+  else
+    raise exception 'Unknown record type.';
+  end if;
+  if v_label is null then raise exception 'Record not found.'; end if;
+  perform public.fn_log(p_actor,
+    case when p_archived then 'archive' else 'restore' end,
+    (case when p_archived then 'Archived ' else 'Restored ' end) || p_type || ' "' || v_label || '"');
+end; $$;
+
+create or replace function public.list_archived(p_actor uuid)
+returns json
+language plpgsql security definer set search_path = public, extensions as $$
+declare v_p json; v_v json;
+begin
+  if not public.fn_is_admin(p_actor) then
+    raise exception 'Only the administrator can view the archives.';
+  end if;
+  select coalesce(json_agg(x order by x.archived_at desc), '[]'::json) into v_p from (
+    select pt.id, pt.patient_no as ref, pt.full_name as name,
+           trim(both ' ' from coalesce(pt.age::text,'') || ' ' ||
+                case when pt.gender is null then '' else '/ ' || pt.gender end) as info,
+           (select count(*) from public.visits v where v.patient_id = pt.id) as extra,
+           pt.archived_at
+      from public.patients pt where pt.archived_at is not null
+  ) x;
+  select coalesce(json_agg(x order by x.archived_at desc), '[]'::json) into v_v from (
+    select v.id, v.visit_no as ref, p.full_name as name,
+           p.patient_no || ' · ' || v.status as info,
+           v.total as extra, v.archived_at
+      from public.visits v join public.patients p on p.id = v.patient_id
+     where v.archived_at is not null
+  ) x;
+  return json_build_object('patients', v_p, 'visits', v_v);
+end; $$;
+
+create or replace function public.delete_archived(p_actor uuid, p_type text, p_id uuid)
+returns void
+language plpgsql security definer set search_path = public, extensions as $$
+declare v_label text;
+begin
+  if not public.fn_is_admin(p_actor) then
+    raise exception 'Only the administrator can delete archived records.';
+  end if;
+  if p_type = 'patient' then
+    select patient_no || ' - ' || full_name into v_label
+      from public.patients where id = p_id and archived_at is not null;
+    if v_label is null then raise exception 'Archived patient not found.'; end if;
+    perform public.fn_log(p_actor, 'purge', 'Permanently deleted archived patient "' || v_label || '"');
+    delete from public.patients where id = p_id;
+  elsif p_type = 'visit' then
+    select visit_no into v_label from public.visits where id = p_id and archived_at is not null;
+    if v_label is null then raise exception 'Archived visit not found.'; end if;
+    perform public.fn_log(p_actor, 'purge', 'Permanently deleted archived visit "' || v_label || '"');
+    delete from public.visits where id = p_id;
+  else
+    raise exception 'Unknown record type.';
+  end if;
+end; $$;
+
 create or replace function public.upsert_service(
   p_actor uuid, p_id uuid, p_category text, p_name text, p_price numeric
 ) returns json
@@ -1037,10 +1164,42 @@ begin
   return v;
 end; $$;
 
+-- Admin only: edit an existing patient's details.
+create or replace function public.update_patient(
+  p_actor uuid, p_id uuid, p_full_name text, p_age integer, p_gender text,
+  p_address text, p_contact text, p_referred_by text
+) returns public.patients
+language plpgsql security definer set search_path = public, extensions as $$
+declare v public.patients;
+begin
+  if not public.fn_is_admin(p_actor) then
+    raise exception 'Only the administrator can edit patient details.';
+  end if;
+  if length(trim(coalesce(p_full_name,''))) < 2 then
+    raise exception 'Patient name is required.';
+  end if;
+  update public.patients set
+    full_name   = trim(p_full_name),
+    age         = p_age,
+    gender      = nullif(trim(p_gender), ''),
+    address     = nullif(trim(p_address), ''),
+    contact     = nullif(trim(p_contact), ''),
+    referred_by = nullif(trim(p_referred_by), '')
+  where id = p_id
+  returning * into v;
+  if v.id is null then
+    raise exception 'Patient not found.';
+  end if;
+  perform public.fn_log(p_actor, 'patient_update', 'Updated ' || v.patient_no || ' - ' || v.full_name);
+  return v;
+end; $$;
+
 create or replace function public.create_visit(p_actor uuid, p_patient_id uuid, p_items jsonb)
 returns json
 language plpgsql security definer set search_path = public, extensions as $$
 declare v_visit public.visits; v_total numeric(12,2) := 0; it jsonb; v_pname text;
+        v_admin boolean; v_price numeric; v_cat numeric; v_srv_id uuid; v_name text;
+        v_fixed jsonb := '[]'::jsonb;
 begin
   if not exists (select 1 from public.employees e where e.id = p_actor and e.is_active) then
     raise exception 'Please sign in again.';
@@ -1049,15 +1208,29 @@ begin
     raise exception 'Please select at least one service.';
   end if;
 
+  v_admin := public.fn_is_admin(p_actor);
+
+  -- Prices always come from the catalog. Only the administrator may override them.
   for it in select * from jsonb_array_elements(p_items) loop
-    v_total := v_total + coalesce((it->>'price')::numeric, 0);
+    v_srv_id := nullif(it->>'service_id','')::uuid;
+    v_name   := coalesce(it->>'name','Service');
+    v_price  := coalesce((it->>'price')::numeric, 0);
+    if not v_admin and v_srv_id is not null then
+      v_cat := null;
+      select s.price, s.name into v_cat, v_name from public.services s where s.id = v_srv_id;
+      if v_cat is not null then v_price := v_cat; end if;
+      if v_name is null then v_name := coalesce(it->>'name','Service'); end if;
+    end if;
+    v_total := v_total + v_price;
+    v_fixed := v_fixed || jsonb_build_array(
+      jsonb_build_object('service_id', v_srv_id, 'name', v_name, 'price', v_price));
   end loop;
 
   insert into public.visits (visit_no, patient_id, status, total, created_by)
   values ('V-' || lpad(nextval('public.visit_seq')::text, 5, '0'), p_patient_id, 'pending_payment', v_total, p_actor)
   returning * into v_visit;
 
-  for it in select * from jsonb_array_elements(p_items) loop
+  for it in select * from jsonb_array_elements(v_fixed) loop
     insert into public.visit_items (visit_id, service_id, name, price)
     values (
       v_visit.id,
@@ -1159,6 +1332,14 @@ end; $$;
 
 grant execute on function public.list_activity(uuid,integer,date,date) to anon, authenticated;
 
+-- Grants for the RPCs defined in this section. They must come AFTER each
+-- CREATE, otherwise GRANT ... ON FUNCTION fails with "does not exist".
+grant execute on function public.delete_employee(uuid,uuid)               to anon, authenticated;
+grant execute on function public.set_archived(uuid,text,uuid,boolean)     to anon, authenticated;
+grant execute on function public.list_archived(uuid)                      to anon, authenticated;
+grant execute on function public.delete_archived(uuid,text,uuid)          to anon, authenticated;
+grant execute on function public.update_patient(uuid,uuid,text,integer,text,text,text,text) to anon, authenticated;
+
 -- ---------------------------------------------------------------------
 -- 12. RECEIPTS (searchable repository + optional uploaded files)
 -- ---------------------------------------------------------------------
@@ -1206,11 +1387,12 @@ begin
            v.created_at, v.paid_at
       from public.visits v
       join public.patients p on p.id = v.patient_id
-     where q = ''
+     where v.archived_at is null
+       and (q = ''
         or lower(v.visit_no)   like '%'||q||'%'
         or lower(p.full_name)  like '%'||q||'%'
         or lower(p.patient_no) like '%'||q||'%'
-        or lower(substr(v.id::text,1,8)) like '%'||q||'%'
+        or lower(substr(v.id::text,1,8)) like '%'||q||'%')
      order by coalesce(v.paid_at, v.created_at) desc
      limit 300;
 end; $$;

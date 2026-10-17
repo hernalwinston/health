@@ -10,7 +10,7 @@
   var IS_ADMIN = user.role === 'admin';
 
   var db = window.db;
-  var state = { services: [], visits: [], receipts: [], recordPatient: null, editEmployee: null, editService: null, charts: {} };
+  var state = { services: [], visits: [], receipts: [], patients: [], archived: { patients: [], visits: [] }, recordPatient: null, editPatient: null, editEmployee: null, editService: null, charts: {} };
 
   // ---------------------------------------------------------------
   // Small helpers
@@ -144,6 +144,32 @@
     if (e.key === 'Escape') document.querySelectorAll('.overlay.show').forEach(function (o) { o.classList.remove('show'); });
   });
 
+  // Reusable "Are you sure?" confirmation dialog.
+  var CFM_ICON = {
+    warn: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2 1 21h22L12 2zm0 6a1 1 0 0 1 1 1v5a1 1 0 0 1-2 0V9a1 1 0 0 1 1-1zm0 10a1.25 1.25 0 1 1 0 2.5A1.25 1.25 0 0 1 12 18z"/></svg>',
+    danger: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M9 2h6l1 2h4v2H4V4h4l1-2zM6 8h12v11a3 3 0 0 1-3 3H9a3 3 0 0 1-3-3V8zm4 3v8h1.6v-8H10zm2.4 0v8H14v-8h-1.6z"/></svg>',
+    ok: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm-1.2 14.6-4-4 1.4-1.4 2.6 2.6 5.6-5.6 1.4 1.4z"/></svg>'
+  };
+  var confirmCb = null;
+  function confirmDialog(opts) {
+    opts = opts || {};
+    var tone = opts.tone || 'warn';
+    el('modalConfirm').querySelector('.modal').className = 'modal confirm-modal tone-' + tone;
+    el('cfmIco').innerHTML = CFM_ICON[tone] || CFM_ICON.warn;
+    el('cfmTitle').textContent = opts.title || 'Are you sure?';
+    el('cfmMsg').innerHTML = opts.message || '';
+    var ok = el('cfmOk');
+    ok.textContent = opts.confirmText || 'Confirm';
+    ok.className = 'btn ' + (tone === 'danger' ? 'btn-red' : tone === 'ok' ? 'btn-green' : 'btn-amber');
+    confirmCb = opts.onConfirm || null;
+    openModal('modalConfirm');
+  }
+  el('cfmOk').addEventListener('click', function () {
+    var cb = confirmCb; confirmCb = null;
+    closeModal('modalConfirm');
+    if (cb) cb();
+  });
+
   // ---------------------------------------------------------------
   // Role + identity
   // ---------------------------------------------------------------
@@ -165,7 +191,8 @@
     services: ['Services & Prices', 'Manage the service catalog'],
     receipts: ['Receipts', 'Search, store and print patient receipts'],
     reports: ['Reports', 'Preview and export to Excel'],
-    activity: ['Activity Log', 'Who did what, and when']
+    activity: ['Activity Log', 'Who did what, and when'],
+    archives: ['Archives', 'Restore or permanently delete archived records']
   };
   var loaded = {};
   var currentView = '';
@@ -203,6 +230,7 @@
     else if (view === 'services') loadServices(silent);
     else if (view === 'receipts') loadReceipts(silent);
     else if (view === 'activity') loadActivity(silent);
+    else if (view === 'archives') loadArchived(silent);
     else if (view === 'reports') loadReport(silent);
   }
 
@@ -381,14 +409,22 @@
   // ---------------------------------------------------------------
   var patTimer;
   el('patientSearch').addEventListener('input', function () { clearTimeout(patTimer); patTimer = setTimeout(loadPatients, 250); });
-  el('addPatientBtn').addEventListener('click', function () { el('patientForm').reset(); openModal('modalPatient'); });
+  el('addPatientBtn').addEventListener('click', function () {
+    state.editPatient = null;
+    var f = el('patientForm'); f.reset();
+    el('patientModalTitle').textContent = 'New Patient';
+    f.querySelector('button[type=submit]').textContent = 'Save Patient';
+    openModal('modalPatient');
+  });
 
   function loadPatients(silent) {
     var q = el('patientSearch').value.trim();
     var tbody = el('patientsTable').querySelector('tbody');
-    var done = beginLoad(tbody, 6, 5, silent);
+    var cols = IS_ADMIN ? 7 : 6;
+    var done = beginLoad(tbody, cols, 5, silent);
     rpc('search_patients', { p_actor: ACTOR, p_query: q }).then(function (rows) {
       done();
+      state.patients = rows || [];
       if (setHtml(tbody, (rows || []).map(function (p) {
         return '<tr class="clickable" data-id="' + esc(p.id) + '">' +
           '<td class="mono">' + esc(p.patient_no) + '</td>' +
@@ -396,10 +432,27 @@
           '<td>' + (p.age == null ? '—' : esc(p.age)) + '</td>' +
           '<td>' + esc(p.gender || '—') + '</td>' +
           '<td>' + esc(p.referred_by || '—') + '</td>' +
-          '<td>' + fmtDateTime(p.registered_at) + '</td></tr>';
-      }).join('') || emptyRow(6, q ? 'No patients match your search.' : 'No patients yet — add your first patient.'), silent)) {
+          '<td>' + fmtDateTime(p.registered_at) + '</td>' +
+          (IS_ADMIN ? '<td><button class="btn btn-ghost btn-sm" data-edit="' + esc(p.id) + '">Edit</button> ' +
+            '<button class="btn btn-ghost btn-sm" data-arch="' + esc(p.id) + '">Archive</button></td>' : '') +
+          '</tr>';
+      }).join('') || emptyRow(cols, q ? 'No patients match your search.' : 'No patients yet — add your first patient.'), silent)) {
         tbody.querySelectorAll('tr[data-id]').forEach(function (tr) {
           tr.addEventListener('click', function () { openRecord(tr.getAttribute('data-id')); });
+        });
+        tbody.querySelectorAll('button[data-edit]').forEach(function (b) {
+          b.addEventListener('click', function (e) {
+            e.stopPropagation();
+            var p = state.patients.filter(function (x) { return x.id === b.getAttribute('data-edit'); })[0];
+            if (p) openEditPatient(p);
+          });
+        });
+        tbody.querySelectorAll('button[data-arch]').forEach(function (b) {
+          b.addEventListener('click', function (e) {
+            e.stopPropagation();
+            var p = state.patients.filter(function (x) { return x.id === b.getAttribute('data-arch'); })[0];
+            if (p) archiveRecord('patient', p.id, p.full_name);
+          });
         });
       }
     }).catch(function (e) { done(); if (!silent) toast(e.message, 'err'); });
@@ -408,7 +461,7 @@
   el('patientForm').addEventListener('submit', function (e) {
     e.preventDefault();
     var f = e.target;
-    rpc('create_patient', {
+    var params = {
       p_actor: ACTOR,
       p_full_name: f.full_name.value,
       p_age: f.age.value === '' ? null : parseInt(f.age.value, 10),
@@ -416,7 +469,19 @@
       p_address: f.address.value,
       p_contact: f.contact.value,
       p_referred_by: f.referred_by.value
-    }).then(function (p) {
+    };
+    if (state.editPatient) {
+      params.p_id = state.editPatient.id;
+      rpc('update_patient', params).then(function (p) {
+        closeModal('modalPatient');
+        toast('Patient details updated.', 'ok');
+        loadPatients(true);
+        state.editPatient = null;
+        if (el('modalRecord').classList.contains('show')) openRecord(p.id);
+      }).catch(function (err) { toast(err.message, 'err'); });
+      return;
+    }
+    rpc('create_patient', params).then(function (p) {
       closeModal('modalPatient');
       toast('Patient ' + p.patient_no + ' registered.', 'ok');
       loadPatients(true);
@@ -424,6 +489,26 @@
       if (confirm('Patient saved. Create a laboratory visit now?')) openVisitModal(p);
     }).catch(function (err) { toast(err.message, 'err'); });
   });
+
+  function openEditPatient(p) {
+    if (!p) return;
+    state.editPatient = p;
+    var f = el('patientForm');
+    f.reset();
+    f.full_name.value = p.full_name || '';
+    f.age.value = p.age == null ? '' : p.age;
+    f.gender.value = p.gender || '';
+    f.address.value = p.address || '';
+    f.contact.value = p.contact || '';
+    f.referred_by.value = p.referred_by || '';
+    el('patientModalTitle').textContent = 'Edit Patient';
+    f.querySelector('button[type=submit]').textContent = 'Update Patient';
+    document.body.appendChild(el('modalPatient'));
+    openModal('modalPatient');
+  }
+
+  var recEditBtn = el('recEditBtn');
+  if (recEditBtn) recEditBtn.addEventListener('click', function () { openEditPatient(state.recordPatient); });
 
   function openRecord(id) {
     el('recTitle').textContent = 'Patient Record';
@@ -567,7 +652,7 @@
         html += '<div class="pick">' +
           '<input type="checkbox" value="' + esc(s.id) + '" data-name="' + esc(s.name) + '">' +
           '<span class="nm">' + esc(s.name) + '<span class="cat">' + esc(s.category) + '</span></span>' +
-          '<input class="price" type="number" min="0" step="0.01" value="' + num(s.price).toFixed(2) + '" disabled>' +
+          '<input class="price' + (IS_ADMIN ? '' : ' price-locked') + '" type="number" min="0" step="0.01" value="' + num(s.price).toFixed(2) + '" disabled>' +
           '</div>';
       });
     });
@@ -578,10 +663,10 @@
       row.addEventListener('click', function (e) {
         if (e.target === price) return;
         cb.checked = !cb.checked;
-        price.disabled = !cb.checked;
+        price.disabled = !cb.checked || !IS_ADMIN;
         updateVisitTotal();
       });
-      price.addEventListener('input', updateVisitTotal);
+      if (IS_ADMIN) price.addEventListener('input', updateVisitTotal);
     });
   }
 
@@ -673,6 +758,7 @@
     } else {
       h += '<span style="color:var(--muted);font-size:12px">No actions</span>';
     }
+    if (IS_ADMIN) h += ' <button class="btn btn-ghost btn-sm" data-act="archive" data-id="' + v.id + '">Archive</button>';
     return h;
   }
 
@@ -699,6 +785,8 @@
         .catch(function (e) { toast(e.message, 'err'); });
     } else if (act === 'receipt') {
       openReceipt(v);
+    } else if (act === 'archive') {
+      archiveRecord('visit', v.id, v.visit_no + ' · ' + v.patient_name);
     }
   }
 
@@ -902,7 +990,8 @@
   function receiptActions(r) {
     var h = '<button class="btn btn-ghost btn-sm" data-ract="view" data-id="' + r.visit_id + '">View</button> ';
     if (r.has_file) h += '<button class="btn btn-ghost btn-sm" data-ract="file" data-id="' + r.visit_id + '">File</button> ';
-    h += '<button class="btn btn-ghost btn-sm" data-ract="upload" data-id="' + r.visit_id + '">Upload</button>';
+    h += '<button class="btn btn-primary btn-sm" data-ract="download" data-id="' + r.visit_id + '">Download</button>';
+    if (IS_ADMIN) h += ' <button class="btn btn-ghost btn-sm" data-ract="archive" data-id="' + r.visit_id + '">Archive</button>';
     return h;
   }
 
@@ -913,7 +1002,8 @@
     if (!r) return;
     if (act === 'view') openReceipt({ id: r.visit_id, patient_id: r.patient_id });
     else if (act === 'file') openReceiptFile(id);
-    else if (act === 'upload') openUploadModal(r);
+    else if (act === 'download') downloadReceiptPdf(id);
+    else if (act === 'archive') archiveRecord('visit', r.visit_id, r.visit_no + ' · ' + r.patient_name);
   }
 
   function openReceiptFile(visitId) {
@@ -928,6 +1018,161 @@
       if (!w) { var a = document.createElement('a'); a.href = url; a.download = f.file_name || 'receipt'; a.click(); }
       setTimeout(function () { URL.revokeObjectURL(url); }, 60000);
     }).catch(function (e) { toast(e.message, 'err'); });
+  }
+
+  // ---- Download the generated receipt as a real PDF (jsPDF) --------------
+  function pdfMoney(v) {
+    return 'PHP ' + num(v).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
+
+  function downloadReceiptPdf(visitId) {
+    if (!(window.jspdf && window.jspdf.jsPDF)) { toast('PDF library not loaded.', 'err'); return; }
+    var r = findReceipt(visitId);
+    if (!r) { toast('Receipt not found.', 'err'); return; }
+    toast('Preparing receipt PDF\u2026');
+    Promise.all([
+      rpc('get_patient_record', { p_actor: ACTOR, p_patient_id: r.patient_id }),
+      logoDataUrlWhite()
+    ]).then(function (res) {
+      var data = res[0], logo = res[1];
+      var visit = (data.visits || []).filter(function (x) { return x.id === visitId; })[0];
+      if (!visit) { toast('Receipt details not found.', 'err'); return; }
+      buildReceiptPdf(data.patient, visit, logo);
+    }).catch(function (e) { toast(e.message || 'Could not build PDF.', 'err'); });
+  }
+
+  function buildReceiptPdf(p, v, logoDataUrl) {
+    var PDF = window.jspdf.jsPDF;
+    var doc = new PDF({ unit: 'mm', format: 'a4' });
+    var W = 210, M = 15, R = W - M, y = 15;
+    var navy = [9, 37, 76], blue = [10, 86, 186], grey = [91, 107, 127], ink = [11, 37, 69],
+      light = [242, 247, 253], line = [228, 236, 245], muted = [123, 147, 173];
+    function tc(c) { doc.setTextColor(c[0], c[1], c[2]); }
+    function bg(c) { doc.setFillColor(c[0], c[1], c[2]); }
+    function dc(c) { doc.setDrawColor(c[0], c[1], c[2]); }
+    function fit(text, maxW) {
+      text = String(text == null ? '' : text);
+      if (doc.getTextWidth(text) <= maxW) return text;
+      var t = text;
+      while (t.length > 1 && doc.getTextWidth(t + '\u2026') > maxW) t = t.slice(0, -1);
+      return t + '\u2026';
+    }
+    function block(x, w, title, rows) {
+      var h = 7 + rows.length * 5.6 + 3;
+      dc(line); doc.setLineWidth(0.3); doc.rect(x, y, w, h, 'S');
+      doc.setFont('helvetica', 'bold'); doc.setFontSize(8); tc(muted);
+      doc.text(title.toUpperCase(), x + 3, y + 5);
+      var yy = y + 10.5;
+      for (var i = 0; i < rows.length; i++) {
+        doc.setFont('helvetica', 'normal'); doc.setFontSize(9); tc(muted);
+        doc.text(rows[i][0], x + 3, yy);
+        doc.setFont('helvetica', 'bold'); tc(ink);
+        doc.text(fit(rows[i][1], w - 27), x + w - 3, yy, { align: 'right' });
+        yy += 5.6;
+      }
+      return h;
+    }
+
+    if (logoDataUrl) { try { doc.addImage(logoDataUrl, 'PNG', M, y - 1, 21, 21); } catch (e) { } }
+    var tx = M + 26;
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(15); tc(navy);
+    doc.text(CLINIC.name, tx, y + 5.5);
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(9.5); tc(grey);
+    doc.text(CLINIC.street, tx, y + 11.5);
+    doc.text(CLINIC.contact + '   |   ' + CLINIC.email, tx, y + 16.5);
+    y = 40;
+    dc(blue); doc.setLineWidth(0.8); doc.line(M, y, R, y);
+
+    y += 4;
+    bg(blue); doc.rect(M, y, R - M, 11, 'F');
+    tc([255, 255, 255]); doc.setFont('helvetica', 'bold'); doc.setFontSize(11);
+    doc.text('RECEIPT', M + 4, y + 7.3);
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(9.5);
+    doc.text('No. ' + String(v.id || '').slice(0, 8).toUpperCase(), R - 4, y + 7.3, { align: 'right' });
+    y += 11;
+
+    y += 4;
+    bg([244, 249, 255]); dc([226, 238, 251]); doc.setLineWidth(0.3);
+    doc.rect(M, y, R - M, 11, 'FD');
+    tc([66, 83, 107]); doc.setFont('helvetica', 'normal'); doc.setFontSize(10);
+    doc.text('Date: ' + fmtDateTime(v.paid_at || v.created_at), M + 4, y + 7);
+    var isRefunded = v.status === 'refunded', isUnpaid = v.status === 'pending_payment';
+    var stampLabel = isRefunded ? 'Refunded' : (isUnpaid ? 'Unpaid' : (v.status === 'completed' ? 'Completed' : 'Paid'));
+    var stampColor = isRefunded ? [192, 43, 43] : (isUnpaid ? [182, 115, 10] : [12, 122, 67]);
+    doc.setFont('helvetica', 'bold'); tc(stampColor);
+    doc.text(stampLabel.toUpperCase(), R - 4, y + 7, { align: 'right' });
+    y += 11;
+
+    y += 6;
+    var gap = 6, colW = (R - M - gap) / 2;
+    var method = (v.payments && v.payments.length) ? v.payments[v.payments.length - 1].method : '\u2014';
+    var h1 = block(M, colW, 'Billed To', [
+      ['Patient', p.full_name], ['Patient No', p.patient_no],
+      ['Age / Gender', (p.age == null ? '\u2014' : p.age) + ' / ' + (p.gender || '\u2014')]
+    ]);
+    block(M + colW + gap, colW, 'Details', [
+      ['Visit No', v.visit_no], ['Payment Method', method],
+      ['Handled By', user.full_name || user.username]
+    ]);
+    y += h1 + 6;
+
+    bg(light); doc.rect(M, y, R - M, 8, 'F');
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(8.5); tc([39, 74, 114]);
+    doc.text('#', M + 3, y + 5.3);
+    doc.text('SERVICE / TEST', M + 12, y + 5.3);
+    doc.text('AMOUNT', R - 4, y + 5.3, { align: 'right' });
+    y += 8;
+    dc(line); doc.setLineWidth(0.2); doc.line(M, y, R, y);
+
+    var items = v.items || [];
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(9.5);
+    var nameMax = R - 4 - 26 - (M + 12);
+    items.forEach(function (it, i) {
+      var lines = doc.splitTextToSize(String(it.name || ''), nameMax);
+      var rh = Math.max(8, lines.length * 4.6 + 3.4);
+      if (y + rh > 262) { doc.addPage(); y = 20; }
+      var ty = y + 5.3;
+      tc([147, 167, 191]); doc.text(String(i + 1), M + 3, ty);
+      tc(ink);
+      for (var li = 0; li < lines.length; li++) doc.text(lines[li], M + 12, ty + li * 4.6);
+      doc.text(pdfMoney(it.price), R - 4, ty, { align: 'right' });
+      y += rh;
+      dc(line); doc.setLineWidth(0.2); doc.line(M, y, R, y);
+    });
+    if (!items.length) {
+      tc(grey); doc.text('No items', M + 12, y + 5.3); y += 8;
+      dc(line); doc.line(M, y, R, y);
+    }
+
+    var pays = v.payments || [];
+    var paid = 0; pays.forEach(function (x) { if (x.status === 'paid') paid += num(x.amount); });
+    var total = num(v.total);
+    var amountShown = isRefunded ? paid : (paid || total);
+    var totalsWord = isRefunded ? 'Total Refunded' : (isUnpaid ? 'Amount Due' : 'Total Paid');
+
+    y += 4;
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(10); tc(grey);
+    doc.text('Subtotal', M + 4, y + 4);
+    doc.text(pdfMoney(total), R - 4, y + 4, { align: 'right' });
+    y += 9;
+    dc(blue); doc.setLineWidth(0.7); doc.line(M, y, R, y);
+    y += 7;
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(13); tc(navy);
+    doc.text(totalsWord, M + 4, y);
+    tc(blue); doc.text(pdfMoney(amountShown), R - 4, y, { align: 'right' });
+
+    y += 18;
+    if (y > 252) { doc.addPage(); y = 40; }
+    dc(ink); doc.setLineWidth(0.4); doc.line(R - 70, y, R, y);
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(9); tc(grey);
+    doc.text('Received by', R - 35, y + 4.5, { align: 'center' });
+
+    y += 16;
+    doc.setFontSize(8.5); tc([122, 138, 160]);
+    var note = 'Thank you for choosing Dr. Mendoza Multi-Specialty Clinic. This document serves as your proof of payment and laboratory request slip.';
+    doc.text(doc.splitTextToSize(note, R - M), (M + R) / 2, y, { align: 'center' });
+
+    doc.save('MendozaClinic_Receipt_' + String(v.id || '').slice(0, 8).toUpperCase() + '.pdf');
   }
 
   function openUploadModal(r) {
@@ -1042,9 +1287,10 @@
         var toggle = e.is_active
           ? '<button class="btn btn-ghost btn-sm" data-act="disable" data-id="' + e.id + '">Disable</button>'
           : '<button class="btn btn-green btn-sm" data-act="enable" data-id="' + e.id + '">Enable</button>';
+        var del = e.id === ACTOR ? '' : ' <button class="btn btn-danger btn-sm" data-act="delete" data-id="' + e.id + '">Delete</button>';
         return '<tr><td><strong>' + esc(e.full_name || e.username) + '</strong></td><td>' + esc(e.username) + '</td>' +
           '<td>' + roleBadge + '</td><td>' + status + '</td><td>' + timeAgo(e.last_seen) + '</td>' +
-          '<td><button class="btn btn-ghost btn-sm" data-act="edit" data-id="' + e.id + '">Edit</button> ' + toggle + '</td></tr>';
+          '<td><button class="btn btn-ghost btn-sm" data-act="edit" data-id="' + e.id + '">Edit</button> ' + toggle + del + '</td></tr>';
       }).join('') || emptyRow(6, 'No employees.'), silent);
       if (changed) tbody.querySelectorAll('[data-act]').forEach(function (b) {
         b.addEventListener('click', function () { empAction(b.getAttribute('data-act'), b.getAttribute('data-id'), rows); });
@@ -1066,9 +1312,35 @@
       el('pwHint').style.display = '';
       openModal('modalEmployee');
     } else if (act === 'disable' || act === 'enable') {
-      if (!confirm((act === 'disable' ? 'Disable' : 'Enable') + ' this account?')) return;
-      rpc('set_employee_active', { p_actor: ACTOR, p_id: id, p_active: act === 'enable' })
-        .then(function () { toast('Account updated.', 'ok'); loadEmployees(true); }).catch(function (e) { toast(e.message, 'err'); });
+      var disabling = act === 'disable';
+      var nm = emp ? (emp.full_name || emp.username) : 'this account';
+      confirmDialog({
+        tone: disabling ? 'warn' : 'ok',
+        title: disabling ? 'Disable this account?' : 'Enable this account?',
+        message: '<b>' + esc(nm) + '</b> ' + (disabling
+          ? 'will not be able to sign in until you enable it again.'
+          : 'will be able to sign in and use the system again.'),
+        confirmText: disabling ? 'Disable' : 'Enable',
+        onConfirm: function () {
+          rpc('set_employee_active', { p_actor: ACTOR, p_id: id, p_active: !disabling })
+            .then(function () { toast('Account ' + (disabling ? 'disabled' : 'enabled') + '.', 'ok'); loadEmployees(true); })
+            .catch(function (e) { toast(e.message, 'err'); });
+        }
+      });
+    } else if (act === 'delete') {
+      var dnm = emp ? (emp.full_name || emp.username) : 'this account';
+      confirmDialog({
+        tone: 'danger',
+        title: 'Delete this account?',
+        message: '<b>' + esc(dnm) + '</b> will be permanently removed. Their past records are kept, ' +
+          'but the account cannot be restored.',
+        confirmText: 'Delete',
+        onConfirm: function () {
+          rpc('delete_employee', { p_actor: ACTOR, p_id: id })
+            .then(function () { toast('Account deleted.', 'ok'); loadEmployees(true); })
+            .catch(function (e) { toast(e.message, 'err'); });
+        }
+      });
     }
   }
 
@@ -1199,10 +1471,13 @@
   // ---------------------------------------------------------------
   var ACT_LABEL = {
     login: 'Sign in', logout: 'Sign out', patient_register: 'Patient registered',
+    patient_update: 'Patient updated',
     visit_create: 'Visit created', payment: 'Payment collected', lab_start: 'Sent to lab',
     visit_complete: 'Visit completed', refund: 'Refund', employee_create: 'Account created',
     employee_update: 'Account updated', employee_enable: 'Account enabled', employee_disable: 'Account disabled',
-    service_add: 'Service added', service_edit: 'Service edited', receipt_upload: 'Receipt file uploaded'
+    employee_delete: 'Account deleted',
+    service_add: 'Service added', service_edit: 'Service edited', receipt_upload: 'Receipt file uploaded',
+    archive: 'Record archived', restore: 'Record restored', purge: 'Archived record deleted'
   };
   var activityRows = [];
 
@@ -1249,6 +1524,104 @@
   }
 
   // ---------------------------------------------------------------
+  // ARCHIVES  (soft-deleted patients & visits; restore or purge)
+  // ---------------------------------------------------------------
+  function archiveRecord(type, id, label) {
+    confirmDialog({
+      tone: 'warn', title: 'Archive record',
+      message: 'Move <b>' + esc(label) + '</b> to the archives? It will be hidden from the active lists and can be restored later.',
+      confirmText: 'Archive',
+      onConfirm: function () {
+        rpc('set_archived', { p_actor: ACTOR, p_type: type, p_id: id, p_archived: true }).then(function () {
+          toast('Record archived.', 'ok');
+          loaded.archives = false;
+          softRefresh();
+        }).catch(function (e) { toast(e.message, 'err'); });
+      }
+    });
+  }
+
+  function restoreRecord(type, id, label) {
+    rpc('set_archived', { p_actor: ACTOR, p_type: type, p_id: id, p_archived: false }).then(function () {
+      toast('Record restored.', 'ok');
+      softRefresh();
+    }).catch(function (e) { toast(e.message, 'err'); });
+  }
+
+  function purgeRecord(type, id, label) {
+    confirmDialog({
+      tone: 'danger', title: 'Delete permanently',
+      message: 'Permanently delete <b>' + esc(label) + '</b>? This cannot be undone and all of its records will be removed.',
+      confirmText: 'Delete permanently',
+      onConfirm: function () {
+        rpc('delete_archived', { p_actor: ACTOR, p_type: type, p_id: id }).then(function () {
+          toast('Record permanently deleted.', 'warn');
+          softRefresh();
+        }).catch(function (e) { toast(e.message, 'err'); });
+      }
+    });
+  }
+
+  el('archiveRefreshBtn').addEventListener('click', function () { loadArchived(false); });
+  var archTimer;
+  el('archiveSearch').addEventListener('input', function () { clearTimeout(archTimer); archTimer = setTimeout(renderArchived, 200); });
+
+  function loadArchived(silent) {
+    var tbody = el('archivesTable').querySelector('tbody');
+    var done = beginLoad(tbody, 6, 4, silent);
+    rpc('list_archived', { p_actor: ACTOR }).then(function (data) {
+      done();
+      state.archived = data || { patients: [], visits: [] };
+      renderArchived(silent);
+    }).catch(function (e) {
+      done();
+      if (!silent) { tbody.__sig = null; tbody.innerHTML = emptyRow(6, e.message); }
+    });
+  }
+
+  function renderArchived(silent) {
+    var q = el('archiveSearch').value.toLowerCase();
+    var rows = [];
+    (state.archived.patients || []).forEach(function (p) {
+      rows.push({ type: 'patient', id: p.id, ref: p.ref, name: p.name, info: p.info, extra: p.extra, at: p.archived_at });
+    });
+    (state.archived.visits || []).forEach(function (v) {
+      rows.push({ type: 'visit', id: v.id, ref: v.ref, name: v.name, info: v.info, extra: v.extra, at: v.archived_at });
+    });
+    rows.sort(function (a, b) { return new Date(b.at) - new Date(a.at); });
+    if (q) rows = rows.filter(function (r) {
+      return ((r.ref || '') + ' ' + (r.name || '') + ' ' + (r.info || '')).toLowerCase().indexOf(q) >= 0;
+    });
+    var tbody = el('archivesTable').querySelector('tbody');
+    var changed = setHtml(tbody, rows.map(function (r) {
+      return '<tr>' +
+        '<td><span class="arch-tag arch-' + r.type + '">' + (r.type === 'patient' ? 'Patient' : 'Visit') + '</span></td>' +
+        '<td class="mono">' + esc(r.ref) + '</td>' +
+        '<td><strong>' + esc(r.name) + '</strong></td>' +
+        '<td>' + esc(r.info || '—') + '</td>' +
+        '<td>' + fmtDateTime(r.at) + '</td>' +
+        '<td><button class="btn btn-ghost btn-sm" data-restore="' + r.type + ':' + r.id + '">Restore</button> ' +
+        '<button class="btn btn-ghost btn-sm btn-danger" data-purge="' + r.type + ':' + r.id + '">Delete</button></td>' +
+        '</tr>';
+    }).join('') || emptyRow(6, q ? 'No archived records match your search.' : 'The archives are empty.'), silent);
+    if (!changed) return;
+    tbody.querySelectorAll('button[data-restore]').forEach(function (b) {
+      b.addEventListener('click', function () {
+        var parts = b.getAttribute('data-restore').split(':');
+        var row = rows.filter(function (x) { return x.type === parts[0] && x.id === parts[1]; })[0];
+        restoreRecord(parts[0], parts[1], row ? (row.ref + ' · ' + row.name) : '');
+      });
+    });
+    tbody.querySelectorAll('button[data-purge]').forEach(function (b) {
+      b.addEventListener('click', function () {
+        var parts = b.getAttribute('data-purge').split(':');
+        var row = rows.filter(function (x) { return x.type === parts[0] && x.id === parts[1]; })[0];
+        purgeRecord(parts[0], parts[1], row ? (row.ref + ' · ' + row.name) : '');
+      });
+    });
+  }
+
+  // ---------------------------------------------------------------
   // REPORTS  (auto-loading preview + Print/PDF & Excel with letterhead)
   // ---------------------------------------------------------------
   var CLINIC = {
@@ -1276,6 +1649,23 @@
       })
       .catch(function () { return ''; });
     return _logoCache;
+  }
+
+  var _logoWhiteCache = null;
+  function logoDataUrlWhite() {
+    if (_logoWhiteCache) return _logoWhiteCache;
+    _logoWhiteCache = fetch('images/mendoza-original-white.png')
+      .then(function (r) { return r.blob(); })
+      .then(function (b) {
+        return new Promise(function (ok) {
+          var fr = new FileReader();
+          fr.onload = function () { ok(fr.result); };
+          fr.onerror = function () { ok(''); };
+          fr.readAsDataURL(b);
+        });
+      })
+      .catch(function () { return ''; });
+    return _logoWhiteCache;
   }
 
   function reportPeriodLabel(from, to) {

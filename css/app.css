@@ -244,6 +244,20 @@ button{font-family:inherit}
 .btn-amber{color:#fff;background:linear-gradient(110deg,#f0a52a,#db8a06);box-shadow:0 10px 22px #e08b0030}
 .btn-red{color:#fff;background:linear-gradient(110deg,#ef5a52,#d63a33);box-shadow:0 10px 22px #e0453d30}
 .btn-sm{padding:8px 13px;font-size:12px;border-radius:10px}
+.btn-danger{background:#fff;border-color:#f3c9c6;color:#c02b2b}
+.btn-danger:hover{background:#fdecec;border-color:#e88b84;color:#a4231d}
+
+.confirm-modal{max-width:400px;width:100%;padding:26px 24px 20px;text-align:center}
+#modalConfirm{align-items:center}
+.confirm-ico{width:58px;height:58px;margin:0 auto 14px;border-radius:50%;display:grid;place-items:center;background:#fff3e0;color:#c77700}
+.confirm-ico svg{width:30px;height:30px}
+.confirm-modal h3{margin:0 0 7px;font:800 18px 'Manrope';color:var(--navy)}
+.confirm-msg{margin:0 0 20px;font-size:13.5px;line-height:1.55;color:var(--muted)}
+.confirm-msg b{color:var(--navy)}
+.confirm-foot{display:flex;gap:10px;justify-content:center}
+.confirm-modal.tone-danger .confirm-ico{background:#fdecec;color:#c02b2b}
+.confirm-modal.tone-ok .confirm-ico{background:#e6f7ee;color:#0c7a43}
+.confirm-modal.tone-warn .confirm-ico{background:#fff3e0;color:#c77700}
 .btn[disabled]{opacity:.6;cursor:not-allowed;transform:none}
 
 /* ============================ TABLES ============================ */
@@ -314,6 +328,8 @@ label.f .input,label.f .select{width:100%}
 .pick .nm{flex:1;font-size:13px;font-weight:600;color:#24476f}
 .pick .cat{font-size:10px;color:var(--muted);display:block}
 .pick .price{width:92px;text-align:right;padding:7px 9px;border:1px solid var(--border);border-radius:9px;font:600 12px 'DM Sans';background:#fff}
+.pick .price-locked{border-color:transparent;background:transparent;color:#5f7590;cursor:default}
+.pick .price-locked::-webkit-outer-spin-button,.pick .price-locked::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
 .pick-group{font:800 11px 'Manrope';text-transform:uppercase;letter-spacing:.6px;color:#5f7590;padding:8px 4px 2px}
 .total-row{display:flex;justify-content:space-between;align-items:center;margin-top:14px;padding:14px 16px;border-radius:12px;background:#eef7ff;font:800 16px 'Manrope';color:var(--navy)}
 
@@ -404,16 +420,26 @@ label.f .input,label.f .select{width:100%}
 .act-login{background:#e7f0fd;color:#0a56ba}
 .act-logout{background:#eef2f7;color:#5b6b7f}
 .act-patient_register{background:#e6f7ee;color:#0c7a43}
+.act-patient_update{background:#e8f1fb;color:#1657a8}
 .act-visit_create{background:#e9f0ff;color:#2748c9}
 .act-payment{background:#e8f9ef;color:#0c7a43}
 .act-lab_start{background:#eee9ff;color:#5a37c9}
 .act-visit_complete{background:#e3f6f4;color:#0b7a6b}
 .act-refund{background:#fdecec;color:#c02b2b}
 .act-employee_create,.act-employee_update,.act-employee_enable,.act-employee_disable{background:#fff3e0;color:#a15a00}
+.act-employee_delete{background:#fdecec;color:#c02b2b}
 .act-service_add,.act-service_edit{background:#e9f1fb;color:#1657a8}
 .act-receipt_upload{background:#e8f4fd;color:#0a6ba8}
+.act-archive{background:#fff3e0;color:#a15a00}
+.act-restore{background:#e6f7ee;color:#0c7a43}
+.act-purge{background:#fdecec;color:#c02b2b}
 #activityTable td:nth-child(4){color:#4a5b70}
 .act-detail{max-width:520px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+/* ============================== ARCHIVES ============================== */
+.arch-tag{display:inline-block;font-size:11px;font-weight:700;letter-spacing:.02em;padding:3px 9px;border-radius:999px;white-space:nowrap}
+.arch-patient{background:#e9f0ff;color:#2748c9}
+.arch-visit{background:#e3f6f4;color:#0b7a6b}
 
 /* ============================ RECEIPT DOC ============================ */
 .rec-doc{background:#fff;color:#0b2545;font-size:13px;line-height:1.55}
