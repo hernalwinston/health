@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Clinic System | Dr. Mendoza Multi-Specialty Clinic</title>
+  <link rel="stylesheet" href="css/app.css">
+</head>
+<body>
+  <div class="app" id="app" hidden>
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+      <div class="side-brand">
+        <img src="images/mendoza.png" alt="Clinic logo">
+        <span>
+          <strong>Dr. Mendoza</strong>
+          <small>Clinic System</small>
+        </span>
+      </div>
+
+      <button class="nav-item active" data-view="dashboard">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 13h8V3H3zm0 8h8v-6H3zm10 0h8V11h-8zm0-18v6h8V3z"/></svg>
+        Dashboard
+      </button>
+      <button class="nav-item" data-view="patients">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M16 11a4 4 0 1 0-4-4 4 4 0 0 0 4 4zm-8 1a3 3 0 1 0-3-3 3 3 0 0 0 3 3zm0 2c-2.3 0-6 1.17-6 3.5V20h8v-2.5c0-.9.4-1.7 1.05-2.35A11.6 11.6 0 0 0 8 14zm8 0c-2.67 0-8 1.33-8 4v2h16v-2c0-2.67-5.33-4-8-4z"/></svg>
+        Patients
+      </button>
+      <button class="nav-item" data-view="lab">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M9 3v6.2L4.6 17A3 3 0 0 0 7.2 21h9.6a3 3 0 0 0 2.6-4L15 9.2V3zm-2 0h10v2H7z"/></svg>
+        Laboratory &amp; Payments
+      </button>
+      <button class="nav-item" data-view="receipts">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 2h9l5 5v13a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2zm8 1.5V8h4.5zM8 11h8v2H8zm0 4h5v2H8z"/></svg>
+        Receipts
+      </button>
+      <button class="nav-item admin-only" data-view="employees">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 12a5 5 0 1 0-5-5 5 5 0 0 0 5 5zm0 2c-4 0-8 2-8 4.5V21h16v-2.5C20 16 16 14 12 14z"/></svg>
+        Employees
+      </button>
+      <button class="nav-item admin-only" data-view="services">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M4 4h16v4H4zm0 6h16v10H4zm3 3v4h4v-4z"/></svg>
+        Services &amp; Prices
+      </button>
+      <button class="nav-item" data-view="reports">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 2h9l5 5v15H6zm8 1.5V8h4.5zM8 12h8v2H8zm0 4h8v2H8z"/></svg>
+        Reports
+      </button>
+      <button class="nav-item admin-only" data-view="activity">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 1 0 10 10h-2a8 8 0 1 1-8-8zm1 5v6l5 3-1 1.7-6-3.7V7z"/></svg>
+        Activity Log
+      </button>
+
+      <div class="side-foot">
+        <div class="side-user">
+          <span class="avatar" id="sideAvatar">--</span>
+          <span>
+            <strong id="sideName">--</strong>
+            <small id="sideRole">--</small>
+          </span>
+        </div>
+        <button class="nav-item" id="logoutBtn">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M16 13v-2H7V8l-5 4 5 4v-3zM14 4h5v16h-5v-2h3V6h-3z"/></svg>
+          Sign Out
+        </button>
+      </div>
+    </aside>
+
+    <!-- Main -->
+    <div class="main">
+      <header class="topbar">
+        <button class="hamburger" id="hamburger" aria-label="Toggle menu"><span></span><span></span><span></span></button>
+        <div class="page-title" id="pageTitle">Dashboard<small id="pageSub">Clinic overview</small></div>
+        <div class="top-right">
+          <span class="pill-time" id="clock">--:--</span>
+          <span class="live" id="liveStatus"><span class="dot"></span> Active</span>
+        </div>
+      </header>
+
+      <div class="content">
+        <!-- DASHBOARD -->
+        <section class="view" id="view-dashboard">
+          <div class="grid stats" id="statsGrid"></div>
+          <div class="grid charts">
+            <div class="panel">
+              <div class="panel-head"><h3>Patients Registered (14 days)</h3></div>
+              <div class="panel-body"><div class="chart-box"><canvas id="chartPatients"></canvas></div></div>
+            </div>
+            <div class="panel">
+              <div class="panel-head"><h3>Revenue (14 days)</h3></div>
+              <div class="panel-body"><div class="chart-box"><canvas id="chartRevenue"></canvas></div></div>
+            </div>
+            <div class="panel">
+              <div class="panel-head"><h3>Visits by Status</h3></div>
+              <div class="panel-body"><div class="chart-box"><canvas id="chartStatus"></canvas></div></div>
+            </div>
+            <div class="panel">
+              <div class="panel-head"><h3>Patients by Gender</h3></div>
+              <div class="panel-body"><div class="chart-box"><canvas id="chartGender"></canvas></div></div>
+            </div>
+          </div>
+          <div class="panel">
+            <div class="panel-head"><h3>Recent Visits</h3><div class="sp"><button class="btn btn-ghost btn-sm" data-view-jump="lab">View all</button></div></div>
+            <div class="table-wrap"><table class="data" id="recentTable"><thead><tr><th>Visit No</th><th>Patient</th><th>Status</th><th>Total</th><th>Date</th></tr></thead><tbody></tbody></table></div>
+          </div>
+        </section>
+
+        <!-- PATIENTS -->
+        <section class="view hide" id="view-patients">
+          <div class="panel">
+            <div class="panel-head">
+              <h3>Patients</h3>
+              <div class="sp tools">
+                <input class="input search" id="patientSearch" placeholder="Search name, ID, address, referral..." autocomplete="off">
+                <button class="btn btn-primary" id="addPatientBtn">
+                  <svg viewBox="0 0 24 24" fill="currentColor"><path d="M11 5h2v6h6v2h-6v6h-2v-6H5v-2h6z"/></svg>
+                  New Patient
+                </button>
+              </div>
+            </div>
+            <div class="table-wrap">
+              <table class="data" id="patientsTable">
+                <thead><tr><th>Patient No</th><th>Name</th><th>Age</th><th>Gender</th><th>Referred By</th><th>Registered</th></tr></thead>
+                <tbody></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- LAB / PAYMENTS -->
+        <section class="view hide" id="view-lab">
+          <div class="panel">
+            <div class="panel-head">
+              <h3>Laboratory &amp; Payments</h3>
+              <div class="sp tools">
+                <select class="select" id="visitFilter">
+                  <option value="all">All statuses</option>
+                  <option value="pending_payment">Pending Payment</option>
+                  <option value="paid">Paid</option>
+                  <option value="in_lab">In Laboratory</option>
+                  <option value="completed">Completed</option>
+                  <option value="refunded">Refunded</option>
+                </select>
+                <input class="input search" id="visitSearch" placeholder="Search visit or patient..." autocomplete="off">
+              </div>
+            </div>
+            <div class="table-wrap">
+              <table class="data" id="visitsTable">
+                <thead><tr><th>Visit No</th><th>Patient</th><th>Status</th><th>Total</th><th>Handled By</th><th>Date</th><th>Actions</th></tr></thead>
+                <tbody></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- RECEIPTS -->
+        <section class="view hide" id="view-receipts">
+          <div class="panel">
+            <div class="panel-head">
+              <h3>Receipts</h3>
+              <div class="sp tools">
+                <select class="select" id="receiptFilter">
+                  <option value="all">All receipts</option>
+                  <option value="paid">Paid</option>
+                  <option value="unpaid">Unpaid</option>
+                  <option value="refunded">Refunded</option>
+                  <option value="withfile">With uploaded file</option>
+                </select>
+                <input class="input search" id="receiptSearch" placeholder="Search receipt no, patient, visit..." autocomplete="off">
+              </div>
+            </div>
+            <div class="table-wrap">
+              <table class="data" id="receiptsTable">
+                <thead><tr><th>Receipt No</th><th>Date</th><th>Patient</th><th>Visit No</th><th>Amount</th><th>Method</th><th>Status</th><th>Actions</th></tr></thead>
+                <tbody></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- EMPLOYEES -->
+        <section class="view hide" id="view-employees">
+          <div class="panel">
+            <div class="panel-head">
+              <h3>Employees</h3>
+              <div class="sp"><button class="btn btn-primary" id="addEmployeeBtn">
+                <svg viewBox="0 0 24 24" fill="currentColor"><path d="M11 5h2v6h6v2h-6v6h-2v-6H5v-2h6z"/></svg> New Account</button></div>
+            </div>
+            <div class="table-wrap">
+              <table class="data" id="employeesTable">
+                <thead><tr><th>Name</th><th>Username</th><th>Role</th><th>Status</th><th>Last Active</th><th>Actions</th></tr></thead>
+                <tbody></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- SERVICES -->
+        <section class="view hide" id="view-services">
+          <div class="panel">
+            <div class="panel-head">
+              <h3>Services &amp; Prices</h3>
+              <div class="sp tools">
+                <input class="input search" id="serviceFilterSearch" placeholder="Search services..." autocomplete="off">
+                <button class="btn btn-primary" id="addServiceBtn">
+                  <svg viewBox="0 0 24 24" fill="currentColor"><path d="M11 5h2v6h6v2h-6v6h-2v-6H5v-2h6z"/></svg> New Service</button>
+              </div>
+            </div>
+            <div class="svc-catalog" id="servicesCatalog"></div>
+          </div>
+        </section>
+
+        <!-- REPORTS -->
+        <section class="view hide" id="view-reports">
+          <div class="panel">
+            <div class="panel-head">
+              <h3>Reports</h3>
+              <div class="sp tools">
+                <select class="select" id="reportType">
+                  <option value="patients">Patients</option>
+                  <option value="visits">Visits</option>
+                  <option value="payments">Payments</option>
+                </select>
+                <input class="input" type="date" id="reportFrom">
+                <input class="input" type="date" id="reportTo">
+                <button class="btn btn-ghost" id="reportPrintBtn">
+                  <svg viewBox="0 0 24 24" fill="currentColor"><path d="M19 8H5a3 3 0 0 0-3 3v6h4v4h12v-4h4v-6a3 3 0 0 0-3-3zm-3 11H8v-5h8zm3-7a1 1 0 1 1 0-2 1 1 0 0 1 0 2zM18 3H6v4h12z"/></svg> Print / PDF
+                </button>
+                <button class="btn btn-green" id="reportExportBtn">
+                  <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 16 7 11h3V4h4v7h3zM5 18h14v2H5z"/></svg> Export to Excel
+                </button>
+              </div>
+            </div>
+            <div class="panel-body"><div id="reportSummary" class="hint" style="color:var(--muted);font-size:13px;margin-bottom:12px">Pick a type or date range &mdash; the report loads automatically.</div></div>
+            <div class="table-wrap"><table class="data" id="reportTable"><thead></thead><tbody></tbody></table></div>
+          </div>
+        </section>
+
+        <!-- ACTIVITY LOG (admin) -->
+        <section class="view hide" id="view-activity">
+          <div class="panel">
+            <div class="panel-head">
+              <h3>Activity Log</h3>
+              <div class="sp tools">
+                <input class="input search" id="activitySearch" placeholder="Search user or action..." autocomplete="off">
+                <input class="input" type="date" id="activityFrom" title="From date">
+                <input class="input" type="date" id="activityTo" title="To date">
+                <button class="btn btn-ghost" id="activityClearBtn" title="Clear dates">Clear</button>
+                <button class="btn btn-ghost" id="activityRefreshBtn">
+                  <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 4V1L8 5l4 4V6a6 6 0 1 1-6 6H4a8 8 0 1 0 8-8z"/></svg> Refresh
+                </button>
+              </div>
+            </div>
+            <div class="table-wrap">
+              <table class="data" id="activityTable">
+                <thead><tr><th>When</th><th>User</th><th>Action</th><th>Details</th></tr></thead>
+                <tbody></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+      </div>
+    </div>
+  </div>
+
+  <div class="backdrop" id="backdrop"></div>
+
+  <!-- ===================== MODALS ===================== -->
+
+  <!-- Patient form -->
+  <div class="overlay" id="modalPatient">
+    <form class="modal" id="patientForm">
+      <div class="modal-head"><h3>New Patient</h3><button type="button" class="x-btn" data-close><svg viewBox="0 0 24 24" fill="currentColor"><path d="M18.3 5.7 12 12l-6.3-6.3-1.4 1.4L10.6 13l-6.3 6.3 1.4 1.4L12 14.4l6.3 6.3 1.4-1.4L13.4 13l6.3-6.3z"/></svg></button></div>
+      <div class="modal-body">
+        <div class="form-grid">
+          <label class="f full">Full Name<input class="input" name="full_name" required placeholder="Juan Dela Cruz"></label>
+          <label class="f">Age<input class="input" name="age" type="number" min="0" max="130" placeholder="0"></label>
+          <label class="f">Gender
+            <select class="select" name="gender">
+              <option value="">Select...</option>
+              <option>Male</option><option>Female</option><option>Other</option>
+            </select>
+          </label>
+          <label class="f full">Address<input class="input" name="address" placeholder="Street, Barangay, Municipality"></label>
+          <label class="f">Contact Number<input class="input" name="contact" placeholder="09xx xxx xxxx"></label>
+          <label class="f">Referred By (Doctor)<input class="input" name="referred_by" placeholder="Dr. ..."></label>
+        </div>
+      </div>
+      <div class="modal-foot">
+        <button type="button" class="btn btn-ghost" data-close>Cancel</button>
+        <button type="submit" class="btn btn-primary">Save Patient</button>
+      </div>
+    </form>
+  </div>
+
+  <!-- Visit / service picker -->
+  <div class="overlay" id="modalVisit">
+    <form class="modal wide" id="visitForm">
+      <div class="modal-head"><h3 id="visitTitle">New Visit</h3><button type="button" class="x-btn" data-close><svg viewBox="0 0 24 24" fill="currentColor"><path d="M18.3 5.7 12 12l-6.3-6.3-1.4 1.4L10.6 13l-6.3 6.3 1.4 1.4L12 14.4l6.3 6.3 1.4-1.4L13.4 13l6.3-6.3z"/></svg></button></div>
+      <div class="modal-body">
+        <p style="margin:0 0 12px;font-size:13px;color:var(--muted)">Patient: <strong id="visitPatientName" style="color:var(--navy)"></strong></p>
+        <input class="input" id="visitServiceSearch" placeholder="Search services..." style="width:100%;margin-bottom:12px">
+        <div class="pick-list" id="pickList"></div>
+        <div class="total-row"><span>Total</span><span id="visitTotal">&#8369;0.00</span></div>
+      </div>
+      <div class="modal-foot">
+        <button type="button" class="btn btn-ghost" data-close>Cancel</button>
+        <button type="submit" class="btn btn-primary">Create Visit</button>
+      </div>
+    </form>
+  </div>
+
+  <!-- Payment -->
+  <div class="overlay" id="modalPayment">
+    <form class="modal" id="paymentForm">
+      <div class="modal-head"><h3>Record Payment</h3><button type="button" class="x-btn" data-close><svg viewBox="0 0 24 24" fill="currentColor"><path d="M18.3 5.7 12 12l-6.3-6.3-1.4 1.4L10.6 13l-6.3 6.3 1.4 1.4L12 14.4l6.3 6.3 1.4-1.4L13.4 13l6.3-6.3z"/></svg></button></div>
+      <div class="modal-body">
+        <p style="margin:0 0 14px;font-size:13px;color:var(--muted)">Visit <strong id="payVisitNo" style="color:var(--navy)"></strong> — Patient <strong id="payPatient" style="color:var(--navy)"></strong></p>
+        <div class="form-grid">
+          <label class="f">Amount Due<input class="input" id="payAmount" name="amount" type="number" step="0.01" min="0"></label>
+          <label class="f">Method
+            <select class="select" name="method"><option>Cash</option><option>GCash</option><option>Bank Transfer</option><option>Card</option></select>
+          </label>
+        </div>
+        <p style="font-size:12px;color:var(--amber);margin:4px 0 0">Payment is required before the patient can proceed to the laboratory.</p>
+      </div>
+      <div class="modal-foot">
+        <button type="button" class="btn btn-ghost" data-close>Cancel</button>
+        <button type="submit" class="btn btn-green">Confirm Payment</button>
+      </div>
+    </form>
+  </div>
+
+  <!-- Patient record (wide) -->
+  <div class="overlay" id="modalRecord">
+    <div class="modal wide">
+      <div class="modal-head"><h3 id="recTitle">Patient Record</h3><button type="button" class="x-btn" data-close><svg viewBox="0 0 24 24" fill="currentColor"><path d="M18.3 5.7 12 12l-6.3-6.3-1.4 1.4L10.6 13l-6.3 6.3 1.4 1.4L12 14.4l6.3 6.3 1.4-1.4L13.4 13l6.3-6.3z"/></svg></button></div>
+      <div class="modal-body" id="recBody"></div>
+      <div class="modal-foot">
+        <button type="button" class="btn btn-ghost" data-close>Close</button>
+        <button type="button" class="btn btn-green" id="recPrintBtn">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M19 8H5a3 3 0 0 0-3 3v6h4v4h12v-4h4v-6a3 3 0 0 0-3-3zm-3 11H8v-5h8zm3-7a1 1 0 1 1 1-1 1 1 0 0 1-1 1zM18 3H6v4h12z"/></svg> Print Record
+        </button>
+        <button type="button" class="btn btn-primary" id="recNewVisitBtn">New Visit</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Employee form -->
+  <div class="overlay" id="modalEmployee">
+    <form class="modal" id="employeeForm">
+      <div class="modal-head"><h3 id="empTitle">New Account</h3><button type="button" class="x-btn" data-close><svg viewBox="0 0 24 24" fill="currentColor"><path d="M18.3 5.7 12 12l-6.3-6.3-1.4 1.4L10.6 13l-6.3 6.3 1.4 1.4L12 14.4l6.3 6.3 1.4-1.4L13.4 13l6.3-6.3z"/></svg></button></div>
+      <div class="modal-body">
+        <div class="form-grid">
+          <label class="f full">Full Name<input class="input" name="full_name" required placeholder="Full name"></label>
+          <label class="f">Username<input class="input" name="username" required placeholder="username"></label>
+          <label class="f">Role
+            <select class="select" name="role"><option value="employee">Employee</option><option value="admin">Administrator</option></select>
+          </label>
+          <label class="f full">Password <span id="pwHint" style="font-weight:500;color:var(--muted)">(leave blank to keep current)</span><input class="input" name="password" type="text" placeholder="Set a password"></label>
+        </div>
+      </div>
+      <div class="modal-foot">
+        <button type="button" class="btn btn-ghost" data-close>Cancel</button>
+        <button type="submit" class="btn btn-primary">Save</button>
+      </div>
+    </form>
+  </div>
+
+  <!-- Service form -->
+  <div class="overlay" id="modalService">
+    <form class="modal" id="serviceForm">
+      <div class="modal-head"><h3 id="srvTitle">New Service</h3><button type="button" class="x-btn" data-close><svg viewBox="0 0 24 24" fill="currentColor"><path d="M18.3 5.7 12 12l-6.3-6.3-1.4 1.4L10.6 13l-6.3 6.3 1.4 1.4L12 14.4l6.3 6.3 1.4-1.4L13.4 13l6.3-6.3z"/></svg></button></div>
+      <div class="modal-body">
+        <div class="form-grid">
+          <label class="f full">Service Name<input class="input" name="name" required placeholder="e.g. Complete Blood Count (CBC)"></label>
+          <label class="f">Category<input class="input" name="category" placeholder="e.g. Laboratory - Chemistry"></label>
+          <label class="f">Price (PHP)<input class="input" name="price" type="number" step="0.01" min="0" value="0"></label>
+        </div>
+      </div>
+      <div class="modal-foot">
+        <button type="button" class="btn btn-ghost" data-close>Cancel</button>
+        <button type="submit" class="btn btn-primary">Save Service</button>
+      </div>
+    </form>
+  </div>
+
+  <!-- Receipt / lab slip -->
+  <div class="overlay" id="modalReceipt">
+    <div class="modal">
+      <div class="modal-head"><h3 id="recModalTitle">Receipt</h3><button type="button" class="x-btn" data-close><svg viewBox="0 0 24 24" fill="currentColor"><path d="M18.3 5.7 12 12l-6.3-6.3-1.4 1.4L10.6 13l-6.3 6.3 1.4 1.4L12 14.4l6.3 6.3 1.4-1.4L13.4 13l6.3-6.3z"/></svg></button></div>
+      <div class="modal-body"><div id="recDoc" class="rec-doc"></div></div>
+      <div class="modal-foot">
+        <button type="button" class="btn btn-ghost" data-close>Close</button>
+        <button type="button" class="btn btn-primary" id="printBtn">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M19 8H5a3 3 0 0 0-3 3v6h4v4h12v-4h4v-6a3 3 0 0 0-3-3zm-3 11H8v-5h8zm3-7a1 1 0 1 1 1-1 1 1 0 0 1-1 1zM18 3H6v4h12z"/></svg> Print
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Upload receipt file -->
+  <div class="overlay" id="modalReceiptUpload">
+    <form class="modal" id="receiptUploadForm">
+      <div class="modal-head"><h3>Upload Receipt</h3><button type="button" class="x-btn" data-close><svg viewBox="0 0 24 24" fill="currentColor"><path d="M18.3 5.7 12 12l-6.3-6.3-1.4 1.4L10.6 13l-6.3 6.3 1.4 1.4L12 14.4l6.3 6.3 1.4-1.4L13.4 13l6.3-6.3z"/></svg></button></div>
+      <div class="modal-body">
+        <p style="margin:0 0 14px;font-size:13px;color:var(--muted)">Attach a photo or PDF of the patient's receipt for receipt <strong id="updReceiptNo" style="color:var(--navy)"></strong> (<span id="updPatient" style="color:var(--navy)"></span>).</p>
+        <label class="f">Receipt file (image or PDF)
+          <input class="input" id="updFile" type="file" accept="image/*,application/pdf">
+        </label>
+        <label class="f" style="margin-top:12px">File name
+          <input class="input" id="updName" placeholder="e.g. receipt-0001.jpg">
+        </label>
+        <div id="updPreview" class="upd-preview"></div>
+        <p style="font-size:12px;color:var(--muted);margin:10px 0 0">Max size 3&nbsp;MB.</p>
+      </div>
+      <div class="modal-foot">
+        <button type="button" class="btn btn-ghost" data-close>Cancel</button>
+        <button type="submit" class="btn btn-primary" id="updSaveBtn">Save Receipt</button>
+      </div>
+    </form>
+  </div>
+
+  <div class="toasts" id="toasts"></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.118.0/dist/umd/supabase.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js"></script>
+  <script src="js/config.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>

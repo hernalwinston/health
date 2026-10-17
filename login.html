@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sign In | Dr. Mendoza Multi-Specialty Clinic</title>
+  <meta name="description" content="Staff sign in for the Dr. Mendoza Multi-Specialty Clinic management system.">
+  <link rel="stylesheet" href="css/app.css">
+</head>
+<body>
+  <main class="auth">
+    <span class="auth-grid" aria-hidden="true"></span>
+    <span class="auth-rings" aria-hidden="true"><i></i><i></i><i></i></span>
+    <span class="auth-blob b1" aria-hidden="true"></span>
+    <span class="auth-blob b2" aria-hidden="true"></span>
+    <span class="auth-blob b3" aria-hidden="true"></span>
+    <span class="auth-blob b4" aria-hidden="true"></span>
+
+    <form class="auth-card" id="loginForm" novalidate>
+      <div class="auth-brand">
+        <img src="images/mendoza.png" alt="Dr. Mendoza Multi-Specialty Clinic logo">
+        <span>
+          <strong>Dr. Mendoza</strong>
+          <small>Multi-Specialty Clinic</small>
+        </span>
+      </div>
+
+      <h1>Staff Sign In</h1>
+      <p class="sub">Enter your account to access the clinic system.</p>
+
+      <div class="field">
+        <label for="username">Username</label>
+        <div class="input-wrap">
+          <span class="lead" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 12a5 5 0 1 0-5-5 5 5 0 0 0 5 5zm0 2c-4.42 0-8 2.24-8 5v1h16v-1c0-2.76-3.58-5-8-5z"/></svg>
+          </span>
+          <input id="username" name="username" type="text" autocomplete="username" placeholder="e.g. admin" required>
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="password">Password</label>
+        <div class="input-wrap">
+          <span class="lead" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M17 9V7a5 5 0 0 0-10 0v2H5v12h14V9zM9 7a3 3 0 0 1 6 0v2H9z"/></svg>
+          </span>
+          <input id="password" name="password" type="password" autocomplete="current-password" placeholder="Enter your password" required>
+          <button type="button" class="eye" id="togglePw" aria-label="Show password" aria-pressed="false">
+            <svg class="eye-on" viewBox="0 0 24 24" fill="currentColor"><path d="M12 5C6.5 5 2.7 8.7 1 12c1.7 3.3 5.5 7 11 7s9.3-3.7 11-7c-1.7-3.3-5.5-7-11-7zm0 12a5 5 0 1 1 5-5 5 5 0 0 1-5 5zm0-8a3 3 0 1 0 3 3 3 3 0 0 0-3-3z"/></svg>
+            <svg class="eye-off" viewBox="0 0 24 24" fill="currentColor"><path d="M2 4.3 3.3 3 21 20.7 19.7 22l-3.2-3.2A11.6 11.6 0 0 1 12 19C6.5 19 2.7 15.3 1 12a13.7 13.7 0 0 1 4-4.8zm6.3 6.3A3 3 0 0 0 12 15a3 3 0 0 0 1.3-.3l-1.9-1.9-.1-.1-3-3zM12 5c5.5 0 9.3 3.7 11 7a14 14 0 0 1-2.6 3.5l-2.3-2.3A5 5 0 0 0 9.8 7.2L8 5.4A11 11 0 0 1 12 5z"/></svg>
+          </button>
+        </div>
+      </div>
+
+      <button class="auth-btn" id="loginBtn" type="submit">
+        <span class="spinner" aria-hidden="true"></span>
+        <span class="btn-label">Sign In</span>
+      </button>
+
+      <div class="auth-msg" id="loginMsg" role="alert" aria-live="polite"></div>
+
+      <p class="auth-foot">Accounts are created by the administrator only.<br><a href="index.html">&larr; Back to website</a></p>
+    </form>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.118.0/dist/umd/supabase.js"></script>
+  <script src="js/config.js"></script>
+  <script src="js/login.js"></script>
+</body>
+</html>
