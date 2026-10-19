@@ -3,263 +3,114 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="Dr. Mendoza Multi-Specialty Clinic — quality healthcare and diagnostic services at Magsaysay St., Minanga, Aparri, Cagayan. Call 0917 574 4643.">
-  <title>Dr. Mendoza Multi-Specialty Clinic | Your Health, Our Priority</title>
-  <link rel="stylesheet" href="css/style.css">
-  <script src="js/script.js" defer></script>
+  <title>Login — Dr. Mendoza Multi-Specialty Clinic</title>
+  <meta name="description" content="Staff login for Dr. Mendoza Multi-Specialty Clinic.">
+  <link rel="icon" href="images/mendoza.png" type="image/png">
+
+  <!-- Fonts: Poppins (headings/brand) + Inter (form/labels) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap">
+
+  <link rel="stylesheet" href="css/login.css">
 </head>
 <body>
-  <header class="header" id="home">
-    <div class="topbar">
-      <div class="container topbar-inner">
-        <span class="topbar-item topbar-address">Magsaysay St., Minanga, Aparri, Cagayan, Philippines</span>
-        <span class="topbar-item topbar-phone">Phone: 0917 574 4643</span>
-      </div>
-    </div>
-    <nav class="nav container">
-      <a href="#home" class="brand" aria-label="Dr. Mendoza Multi-Specialty Clinic home">
-        <span class="brand-logo"><img src="images/mendoza.png" alt="Dr. Mendoza Multi-Specialty Clinic logo"></span>
-        <span class="brand-text"><strong>DR. MENDOZA</strong><small>Multi-Specialty Clinic</small></span>
-      </a>
-      <button class="menu-toggle" id="menuToggle" aria-label="Toggle navigation" aria-expanded="false">
-        <span></span><span></span><span></span>
-      </button>
-      <div class="nav-links" id="navLinks">
-        <a class="nav-link active" href="#home">Home</a>
-        <a class="nav-link" href="#about">About</a>
-        <a class="nav-link" href="#services">Services</a>
-        <a class="nav-link" href="#contact">Contact</a>
-      </div>
-      <div class="header-actions">
-        <!-- Change login.html to the filename of your actual login page -->
-        <a class="btn btn-login" href="login.html">Login</a>
-      </div>
-    </nav>
-  </header>
+  <div class="login-page">
 
-  <main>
-    <section class="hero">
-      <div class="hero-photo" role="img" aria-label="Doctor providing professional healthcare at Dr. Mendoza Multi-Specialty Clinic"></div>
-      <div class="hero-shade"></div>
-      <div class="container hero-content reveal">
-        <p class="eyebrow">QUALITY CARE <span>•</span> PROFESSIONAL SERVICE <span>•</span> HEALTHIER TOMORROW</p>
-        <h1>Your Health<br><span>Our Priority</span></h1>
-        <p class="hero-description">Welcome to Dr. Mendoza Multi-Specialty Clinic, where we are committed to providing quality healthcare services for you and your family.</p>
-        <div class="hero-actions">
-          <a href="#services" class="btn btn-primary">Explore Our Services <span class="arrow">→</span></a>
-          <a href="#contact" class="btn btn-outline">Contact Us</a>
+    <!-- ======================= LEFT: BRAND PANEL ======================= -->
+    <section class="brand-panel">
+      <img class="doctor-image" src="images/clinic-hero.png"
+           alt="Friendly female doctor in a white coat, holding a blue clipboard at the clinic reception">
+
+      <header class="brand-header">
+        <img class="clinic-logo" src="images/mendoza.png" alt="Dr. Mendoza Multi-Specialty Clinic logo">
+        <div class="brand-text">
+          <span class="clinic-name">Dr. Mendoza</span>
+          <span class="clinic-tagline">Multi-Specialty Clinic</span>
         </div>
-        <p class="hero-caption">Care you can trust. Service you deserve.</p>
+      </header>
+
+      <div class="welcome-content">
+        <p class="welcome-lead">Welcome to</p>
+        <h1 class="welcome-title">Mendoza Clinic</h1>
+        <p class="welcome-sub">Quality care for you and your family.</p>
       </div>
-      <div class="wave wave-blue"></div><div class="wave wave-white"></div>
-    </section>
 
-    <section class="benefits container">
-      <article class="benefit reveal"><div class="benefit-mark">01</div><div><h3>Quality Service</h3><p>Safe, clean, and comfortable facilities.</p></div></article>
-      <article class="benefit reveal"><div class="benefit-mark">02</div><div><h3>Complete Services</h3><p>Laboratory, imaging, and diagnostics.</p></div></article>
-      <article class="benefit reveal"><div class="benefit-mark">03</div><div><h3>Easy to Reach</h3><p>Call the clinic to ask about your visit.</p></div></article>
-      <article class="benefit reveal"><div class="benefit-mark">04</div><div><h3>Patient First</h3><p>Your health and comfort matter to us.</p></div></article>
-    </section>
-
-    <section class="about-section" id="about">
-      <div class="container about-grid">
-        <div class="about-image reveal"><img src="images/clinic-hero.png" alt="Dr. Mendoza Multi-Specialty Clinic healthcare facility"></div>
-        <div class="about-copy reveal">
-          <p class="eyebrow">ABOUT THE CLINIC</p>
-          <h2>About Dr. Mendoza<br><span>Multi-Specialty Clinic</span></h2>
-          <p>Dr. Mendoza Multi-Specialty Clinic offers a range of healthcare and diagnostic services for patients and families in Aparri, Cagayan, and nearby communities. From laboratory tests and imaging to consultations, our clinic is here to support your health in a welcoming environment.</p>
-          <p>We believe good health is the foundation of a better life, and we are committed to providing accessible, patient-centered care for you and your loved ones.</p>
-        </div>
-        <div class="about-points reveal">
-          <div><span class="check">✓</span><p><strong>Laboratory Services</strong><small>Chemistry, serology, hematology, and more.</small></p></div>
-          <div><span class="check">✓</span><p><strong>Imaging &amp; Diagnostics</strong><small>Radiology, ultrasound, X-ray, and ECG.</small></p></div>
-          <div><span class="check">✓</span><p><strong>Patient-Centered Care</strong><small>Friendly and attentive support.</small></p></div>
-        </div>
+      <div class="decorative-curves" aria-hidden="true">
+        <svg viewBox="0 0 845 220" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+          <path fill="#F6FBFF" d="M0,118 C150,58 330,58 512,108 C660,148 762,150 845,120 L845,220 L0,220 Z"/>
+          <path fill="#EAF5FF" d="M0,150 C180,94 360,94 540,138 C682,172 772,170 845,146 L845,220 L0,220 Z"/>
+          <path fill="#FFFFFF" d="M0,182 C190,138 380,138 560,174 C702,202 782,196 845,176 L845,220 L0,220 Z"/>
+        </svg>
       </div>
     </section>
 
-    <section class="services-section container" id="services">
-      <div class="section-heading reveal"><p class="eyebrow">OUR SERVICES</p><h2>Our Medical Services</h2><p>Explore our laboratory, imaging, and diagnostic services. Use the search box or category filters to find what you need.</p></div>
+    <!-- ======================= RIGHT: LOGIN PANEL ======================= -->
+    <section class="login-panel">
+      <div class="login-container">
+        <h2 class="login-heading" id="scrTitle">Login to Your Account</h2>
+        <p class="login-subheading" id="scrSub">Staff sign-in for Dr. Mendoza Multi-Specialty Clinic.</p>
 
-      <div class="services-tools reveal">
-        <div class="service-search-wrap">
-          <input type="search" id="serviceSearch" class="service-search" placeholder="Search services (e.g. CBC, pregnancy, X-Ray)" aria-label="Search services" autocomplete="off">
-        </div>
-        <div class="service-filters" id="serviceFilters" role="group" aria-label="Filter services by category">
-          <button type="button" class="filter-pill active" data-filter="all">All Services</button>
-          <button type="button" class="filter-pill" data-filter="chemistry">Chemistry</button>
-          <button type="button" class="filter-pill" data-filter="serology">Serology</button>
-          <button type="button" class="filter-pill" data-filter="hematology">Hematology / Blood Bank</button>
-          <button type="button" class="filter-pill" data-filter="radiology">Radiology / Ultrasound</button>
-          <button type="button" class="filter-pill" data-filter="xray">X-Ray</button>
-          <button type="button" class="filter-pill" data-filter="other">Other Services</button>
-        </div>
-        <p class="service-count" id="serviceCount" aria-live="polite">Showing 84 of 84 services</p>
+        <p class="form-message" id="loginMsg" role="alert" aria-live="polite"></p>
+
+        <!-- ---------- STEP 1: email + password ---------- -->
+        <form class="login-form step" id="stepLogin" novalidate>
+          <div class="form-group">
+            <label for="username">Email</label>
+            <input class="form-input" id="username" name="username" type="text"
+                   autocomplete="username" placeholder="Enter your email address">
+          </div>
+
+          <div class="form-group">
+            <label for="password">Password</label>
+            <div class="input-wrap">
+              <input class="form-input" id="password" name="password" type="password"
+                     autocomplete="current-password" placeholder="Enter your password">
+              <button type="button" class="eye" id="togglePw" aria-label="Show password" aria-pressed="false">
+                <svg class="eye-on" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 5C6.5 5 2.7 8.7 1 12c1.7 3.3 5.5 7 11 7s9.3-3.7 11-7c-1.7-3.3-5.5-7-11-7zm0 12a5 5 0 1 1 5-5 5 5 0 0 1-5 5zm0-8a3 3 0 1 0 3 3 3 3 0 0 0-3-3z"/></svg>
+                <svg class="eye-off" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M2 4.3 3.3 3 21 20.7 19.7 22l-3.2-3.2A11.6 11.6 0 0 1 12 19C6.5 19 2.7 15.3 1 12a13.7 13.7 0 0 1 4-4.8zm6.3 6.3A3 3 0 0 0 12 15a3 3 0 0 0 1.3-.3l-1.9-1.9-.1-.1-3-3zM12 5c5.5 0 9.3 3.7 11 7a14 14 0 0 1-2.6 3.5l-2.3-2.3A5 5 0 0 0 9.8 7.2L8 5.4A11 11 0 0 1 12 5z"/></svg>
+              </button>
+            </div>
+          </div>
+
+          <button class="login-button" id="loginBtn" type="submit">
+            <span class="spinner" aria-hidden="true"></span>
+            <span class="btn-label">Login</span>
+          </button>
+
+          <p class="forgot-note">Forgot password? Ask the clinic administrator to reset it for you.</p>
+        </form>
+
+        <!-- ---------- STEP 2: 6-digit code (e-mailed by Supabase) ---------- -->
+        <form class="login-form step" id="stepCode" novalidate hidden>
+          <div class="code-reveal">
+            <p class="code-reveal-lead">Check your e-mail</p>
+            <p class="code-reveal-timer" id="codeTimer"></p>
+          </div>
+
+          <div class="form-group">
+            <label for="code">6-digit code</label>
+            <input class="form-input code-input" id="code" name="code" type="text"
+                   inputmode="numeric" autocomplete="one-time-code" maxlength="6"
+                   placeholder="000000" aria-describedby="scrSub">
+          </div>
+
+          <button class="login-button" id="codeBtn" type="submit">
+            <span class="spinner" aria-hidden="true"></span>
+            <span class="btn-label">Verify &amp; Sign In</span>
+          </button>
+
+          <button class="forgot-password" id="resendBtn" type="button">Resend the code</button>
+          <button class="link-button" id="codeBackBtn" type="button">Back to login</button>
+        </form>
+
+        <p class="clinic-footer">Dr. Mendoza Multi-Specialty Clinic &bull; Minanga, Aparri, Cagayan</p>
       </div>
-
-      <div class="service-catalog" id="serviceCatalog">
-
-        <article class="service-category reveal" data-category="chemistry">
-          <header class="category-head"><h3>Laboratory – Chemistry</h3><span class="category-count">18 tests</span></header>
-          <ul class="service-list">
-            <li class="service-item"><span class="service-index">01</span><span class="service-name">Fasting Blood Sugar (FBS)</span></li>
-            <li class="service-item"><span class="service-index">02</span><span class="service-name">Cholesterol</span></li>
-            <li class="service-item"><span class="service-index">03</span><span class="service-name">Triglycerides</span></li>
-            <li class="service-item"><span class="service-index">04</span><span class="service-name">Lipid Profile</span></li>
-            <li class="service-item"><span class="service-index">05</span><span class="service-name">Sodium</span></li>
-            <li class="service-item"><span class="service-index">06</span><span class="service-name">Potassium</span></li>
-            <li class="service-item"><span class="service-index">07</span><span class="service-name">Chloride</span></li>
-            <li class="service-item"><span class="service-index">08</span><span class="service-name">Calcium</span></li>
-            <li class="service-item"><span class="service-index">09</span><span class="service-name">Creatinine</span></li>
-            <li class="service-item"><span class="service-index">10</span><span class="service-name">Blood Urea Nitrogen (BUN)</span></li>
-            <li class="service-item"><span class="service-index">11</span><span class="service-name">Blood Uric Acid (BUA)</span></li>
-            <li class="service-item"><span class="service-index">12</span><span class="service-name">SGPT / ALT</span></li>
-            <li class="service-item"><span class="service-index">13</span><span class="service-name">SGOT / ALT</span></li>
-            <li class="service-item"><span class="service-index">14</span><span class="service-name">Alkaline Phosphatase (ALP)</span></li>
-            <li class="service-item"><span class="service-index">15</span><span class="service-name">Urine Pregnancy Test</span></li>
-            <li class="service-item"><span class="service-index">16</span><span class="service-name">Serum Pregnancy Test</span></li>
-            <li class="service-item"><span class="service-index">17</span><span class="service-name">HbA1c</span></li>
-            <li class="service-item"><span class="service-index">18</span><span class="service-name">75g Oral Glucose Tolerance Test (OGTT)</span></li>
-          </ul>
-        </article>
-
-        <article class="service-category reveal" data-category="serology">
-          <header class="category-head"><h3>Laboratory – Serology</h3><span class="category-count">9 tests</span></header>
-          <ul class="service-list">
-            <li class="service-item"><span class="service-index">01</span><span class="service-name">Free T3 (FT3)</span></li>
-            <li class="service-item"><span class="service-index">02</span><span class="service-name">Free T4 (FT4)</span></li>
-            <li class="service-item"><span class="service-index">03</span><span class="service-name">Thyroid Stimulating Hormone (TSH)</span></li>
-            <li class="service-item"><span class="service-index">04</span><span class="service-name">Hepatitis B Surface Antigen (HBsAg)</span></li>
-            <li class="service-item"><span class="service-index">05</span><span class="service-name">Hepatitis A Virus IgM (HAV IgM)</span></li>
-            <li class="service-item"><span class="service-index">06</span><span class="service-name">Prostate Specific Antigen (PSA)</span></li>
-            <li class="service-item"><span class="service-index">07</span><span class="service-name">Dengue NS1 Ag</span></li>
-            <li class="service-item"><span class="service-index">08</span><span class="service-name">Human Immunodeficiency Virus (HIV)</span></li>
-            <li class="service-item"><span class="service-index">09</span><span class="service-name">Rapid Plasma Reagin (RPR)</span></li>
-          </ul>
-        </article>
-
-        <article class="service-category reveal" data-category="hematology">
-          <header class="category-head"><h3>Laboratory – Hematology / Blood Bank and Other Tests</h3><span class="category-count">10 tests</span></header>
-          <ul class="service-list">
-            <li class="service-item"><span class="service-index">01</span><span class="service-name">Complete Blood Count (CBC)</span></li>
-            <li class="service-item"><span class="service-index">02</span><span class="service-name">Erythrocyte Sedimentation Rate (ESR)</span></li>
-            <li class="service-item"><span class="service-index">03</span><span class="service-name">Peripheral Blood Smear (PBS)</span></li>
-            <li class="service-item"><span class="service-index">04</span><span class="service-name">Blood Typing</span></li>
-            <li class="service-item"><span class="service-index">05</span><span class="service-name">Urinalysis</span></li>
-            <li class="service-item"><span class="service-index">06</span><span class="service-name">Fecalysis</span></li>
-            <li class="service-item"><span class="service-index">07</span><span class="service-name">Occult Blood</span></li>
-            <li class="service-item"><span class="service-index">08</span><span class="service-name">H. Pylori Antigen Detection</span></li>
-            <li class="service-item"><span class="service-index">09</span><span class="service-name">Drug Test</span></li>
-            <li class="service-item"><span class="service-index">10</span><span class="service-name">Sperm Analysis</span></li>
-          </ul>
-        </article>
-
-        <article class="service-category reveal" data-category="radiology">
-          <header class="category-head"><h3>Radiology / Ultrasound</h3><span class="category-count">16 procedures</span></header>
-          <ul class="service-list">
-            <li class="service-item"><span class="service-index">01</span><span class="service-name">Whole Abdomen</span></li>
-            <li class="service-item"><span class="service-index">02</span><span class="service-name">Lower Abdomen</span></li>
-            <li class="service-item"><span class="service-index">03</span><span class="service-name">Upper Abdomen</span></li>
-            <li class="service-item"><span class="service-index">04</span><span class="service-name">Kidney Ureter Bladder (KUB)</span></li>
-            <li class="service-item"><span class="service-index">05</span><span class="service-name">Hepatobiliary Tree (HBT)</span></li>
-            <li class="service-item"><span class="service-index">06</span><span class="service-name">Biophysical Score (BPS)</span></li>
-            <li class="service-item"><span class="service-index">07</span><span class="service-name">Trans-Vaginal</span></li>
-            <li class="service-item"><span class="service-index">08</span><span class="service-name">Trans-Rectal</span></li>
-            <li class="service-item"><span class="service-index">09</span><span class="service-name">Thyroid / Neck</span></li>
-            <li class="service-item"><span class="service-index">10</span><span class="service-name">Electronic Fetal Monitoring (EFM)</span></li>
-            <li class="service-item"><span class="service-index">11</span><span class="service-name">Cardiotocography (CTG)</span></li>
-            <li class="service-item"><span class="service-index">12</span><span class="service-name">Pelvic</span></li>
-            <li class="service-item"><span class="service-index">13</span><span class="service-name">Scrotal</span></li>
-            <li class="service-item"><span class="service-index">14</span><span class="service-name">Breast</span></li>
-            <li class="service-item"><span class="service-index">15</span><span class="service-name">Chest</span></li>
-            <li class="service-item"><span class="service-index">16</span><span class="service-name">NST</span></li>
-          </ul>
-        </article>
-
-        <article class="service-category reveal" data-category="xray">
-          <header class="category-head"><h3>X-Ray</h3><span class="category-count">29 procedures</span></header>
-          <ul class="service-list">
-            <li class="service-item"><span class="service-index">01</span><span class="service-name">Chest PA</span></li>
-            <li class="service-item"><span class="service-index">02</span><span class="service-name">Chest AP / Pedia</span></li>
-            <li class="service-item"><span class="service-index">03</span><span class="service-name">Chest APL / Pedia</span></li>
-            <li class="service-item"><span class="service-index">04</span><span class="service-name">APICO</span></li>
-            <li class="service-item"><span class="service-index">05</span><span class="service-name">LSV APL</span></li>
-            <li class="service-item"><span class="service-index">06</span><span class="service-name">LSV APLO</span></li>
-            <li class="service-item"><span class="service-index">07</span><span class="service-name">Cervical APL</span></li>
-            <li class="service-item"><span class="service-index">08</span><span class="service-name">Cervical APLO</span></li>
-            <li class="service-item"><span class="service-index">09</span><span class="service-name">Plain Abdomen</span></li>
-            <li class="service-item"><span class="service-index">10</span><span class="service-name">Skull Series</span></li>
-            <li class="service-item"><span class="service-index">11</span><span class="service-name">PNS</span></li>
-            <li class="service-item"><span class="service-index">12</span><span class="service-name">TLV APL</span></li>
-            <li class="service-item"><span class="service-index">13</span><span class="service-name">TLV APLO</span></li>
-            <li class="service-item"><span class="service-index">14</span><span class="service-name">TCAGE AP</span></li>
-            <li class="service-item"><span class="service-index">15</span><span class="service-name">Pelvic Bone AP</span></li>
-            <li class="service-item"><span class="service-index">16</span><span class="service-name">Orbital Series</span></li>
-            <li class="service-item"><span class="service-index">17</span><span class="service-name">Nasal Bone</span></li>
-            <li class="service-item"><span class="service-index">18</span><span class="service-name">Leg APL</span></li>
-            <li class="service-item"><span class="service-index">19</span><span class="service-name">Thigh APL</span></li>
-            <li class="service-item"><span class="service-index">20</span><span class="service-name">Shoulder AP</span></li>
-            <li class="service-item"><span class="service-index">21</span><span class="service-name">Elbow APL</span></li>
-            <li class="service-item"><span class="service-index">22</span><span class="service-name">Hand APL</span></li>
-            <li class="service-item"><span class="service-index">23</span><span class="service-name">Wrist APL</span></li>
-            <li class="service-item"><span class="service-index">24</span><span class="service-name">Forearm APL</span></li>
-            <li class="service-item"><span class="service-index">25</span><span class="service-name">Foot APL</span></li>
-            <li class="service-item"><span class="service-index">26</span><span class="service-name">Ankle APL</span></li>
-            <li class="service-item"><span class="service-index">27</span><span class="service-name">Calcaneus AP</span></li>
-            <li class="service-item"><span class="service-index">28</span><span class="service-name">Knee APL</span></li>
-            <li class="service-item"><span class="service-index">29</span><span class="service-name">Clavicle AP</span></li>
-          </ul>
-        </article>
-
-        <article class="service-category reveal" data-category="other">
-          <header class="category-head"><h3>Other Services</h3><span class="category-count">2 procedures</span></header>
-          <ul class="service-list">
-            <li class="service-item"><span class="service-index">01</span><span class="service-name">2D Echo with Doppler</span></li>
-            <li class="service-item"><span class="service-index">02</span><span class="service-name">Electrocardiogram (ECG)</span></li>
-          </ul>
-        </article>
-
-      </div>
-
-      <p class="no-results" id="noResults" hidden>No matching service found. Try a different keyword or select another category.</p>
     </section>
+  </div>
 
-    <section class="contact-section container" id="contact">
-      <div class="section-heading reveal"><p class="eyebrow">GET IN TOUCH</p><h2>Contact Dr. Mendoza Multi-Specialty Clinic</h2><p>Have a question about our services? Reach out to us.</p></div>
-    </section>
-  </main>
-
-  <footer class="footer">
-    <div class="container footer-top">
-      <div class="footer-col">
-        <a href="#home" class="footer-brand"><img src="images/mendoza.png" alt="Dr. Mendoza Multi-Specialty Clinic logo" class="footer-logo">Dr. Mendoza Multi-Specialty Clinic</a>
-        <p>Magsaysay St., Minanga, Aparri, Cagayan, Philippines</p>
-        <p class="footer-contact"><span class="contact-icon contact-icon-sm" aria-hidden="true"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M6.62 10.79a15.05 15.05 0 0 0 6.59 6.59l2.2-2.2a1 1 0 0 1 1.02-.24 11.36 11.36 0 0 0 3.57.57 1 1 0 0 1 1 1V20a1 1 0 0 1-1 1A17 17 0 0 1 3 4a1 1 0 0 1 1-1h3.5a1 1 0 0 1 1 1c0 1.25.2 2.45.57 3.57a1 1 0 0 1-.25 1.02l-2.2 2.2z"/></svg></span><span>0917 574 4643</span></p>
-        <p class="footer-contact"><span class="contact-icon contact-icon-sm" aria-hidden="true"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4-8 5-8-5V6l8 5 8-5v2z"/></svg></span><span>mendozaclinic@gmail.com</span></p>
-      </div>
-      <nav class="footer-col footer-nav" aria-label="Footer">
-        <h4>Quick Links</h4>
-        <a href="#home">Home</a>
-        <a href="#about">About</a>
-        <a href="#services">Services</a>
-        <a href="#contact">Contact</a>
-      </nav>
-      <div class="footer-col footer-follow-col">
-        <h4>Follow Us</h4>
-        <a class="footer-follow" href="https://www.facebook.com/profile.php?id=100057123803347" target="_blank" rel="noopener">
-          <span class="contact-icon contact-icon-sm" aria-hidden="true"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M22 12a10 10 0 1 0-11.56 9.88v-6.99H7.9V12h2.54V9.8c0-2.5 1.49-3.89 3.77-3.89 1.09 0 2.24.2 2.24.2v2.46h-1.26c-1.24 0-1.63.77-1.63 1.56V12h2.78l-.44 2.89h-2.34v6.99A10 10 0 0 0 22 12z"/></svg></span>
-          Follow us on Facebook
-        </a>
-      </div>
-    </div>
-    <div class="container footer-bottom">
-      <p>© <span id="year"></span> Dr. Mendoza Multi-Specialty Clinic. All rights reserved.</p>
-      <p>Compassionate care for a healthier community.</p>
-    </div>
-  </footer>
-
-  <button class="to-top" id="toTop" type="button" aria-label="Back to top">
-    <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 5l-7 7 1.41 1.41L11 8.83V19h2V8.83l4.59 4.58L19 12z"/></svg>
-  </button>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.118.0/dist/umd/supabase.js"></script>
+  <script src="js/config.js"></script>
+  <script src="js/login.js"></script>
 </body>
 </html>

@@ -192,7 +192,7 @@
             </div>
             <div class="table-wrap">
               <table class="data" id="employeesTable">
-                <thead><tr><th>Name</th><th>Username</th><th>Role</th><th>Status</th><th>Last Active</th><th>Actions</th></tr></thead>
+                <thead><tr><th>Name</th><th>Username</th><th>Email</th><th>Role</th><th>Status</th><th>Last Active</th><th>Actions</th></tr></thead>
                 <tbody></tbody>
               </table>
             </div>
@@ -382,6 +382,7 @@
           <label class="f">Role
             <select class="select" name="role"><option value="employee">Employee</option><option value="admin">Administrator</option></select>
           </label>
+          <label class="f full">Email <span style="font-weight:500;color:var(--muted)">(6-digit sign-in codes are sent here)</span><input class="input" name="email" type="email" placeholder="name@example.com"></label>
           <label class="f full">Password <span id="pwHint" style="font-weight:500;color:var(--muted)">(leave blank to keep current)</span><input class="input" name="password" type="text" placeholder="Set a password"></label>
         </div>
       </div>

@@ -1,13 +1,34 @@
-(function () {
+(async function () {
   'use strict';
 
   // ---------------------------------------------------------------
-  // Session guard
+  // Session guard - the stored session is only trusted once the
+  // DATABASE confirms it, so a copied localStorage entry is not enough
+  // to skip the 6-digit e-mail code.
   // ---------------------------------------------------------------
   var user = window.Session.get();
-  if (!user || !user.id) { window.location.replace('login.html'); return; }
+  if (!user || !user.id || !user.token) { window.location.replace('index.html'); return; }
+
+  function signOut() {
+    window.Session.clear();
+    window.location.replace('index.html');
+  }
+
+  var fresh = null;
+  try {
+    var check = await window.db.rpc('verify_session', { p_token: user.token });
+    if (check && check.error) throw check.error;
+    fresh = check ? check.data : null;
+  } catch (err) {
+    console.error('Session check failed:', err && err.message ? err.message : err);
+    fresh = null;
+  }
+  if (!fresh || !fresh.id) { signOut(); return; }
+
+  user = fresh;
   var ACTOR = user.id;
   var IS_ADMIN = user.role === 'admin';
+  try { window.Session.save(fresh); } catch (e) { /* storage may be unavailable */ }
 
   var db = window.db;
   var state = { services: [], visits: [], receipts: [], patients: [], archived: { patients: [], visits: [] }, recordPatient: null, editPatient: null, editEmployee: null, editService: null, charts: {} };
@@ -276,7 +297,7 @@
   el('logoutBtn').addEventListener('click', function () {
     rpc('logout', { p_actor: ACTOR }).catch(function () {}).then(function () {
       window.Session.clear();
-      window.location.replace('login.html');
+      window.location.replace('index.html');
     });
   });
 
@@ -1277,7 +1298,7 @@
 
   function loadEmployees(silent) {
     var tbody = el('employeesTable').querySelector('tbody');
-    var done = beginLoad(tbody, 6, 4, silent);
+    var done = beginLoad(tbody, 7, 4, silent);
     rpc('list_employees', { p_actor: ACTOR }).then(function (rows) {
       done();
       var changed = setHtml(tbody, (rows || []).map(function (e) {
@@ -1288,10 +1309,14 @@
           ? '<button class="btn btn-ghost btn-sm" data-act="disable" data-id="' + e.id + '">Disable</button>'
           : '<button class="btn btn-green btn-sm" data-act="enable" data-id="' + e.id + '">Enable</button>';
         var del = e.id === ACTOR ? '' : ' <button class="btn btn-danger btn-sm" data-act="delete" data-id="' + e.id + '">Delete</button>';
+        var mail = e.email
+          ? esc(e.email)
+          : '<span style="color:var(--muted)">Not set</span>';
         return '<tr><td><strong>' + esc(e.full_name || e.username) + '</strong></td><td>' + esc(e.username) + '</td>' +
+          '<td>' + mail + '</td>' +
           '<td>' + roleBadge + '</td><td>' + status + '</td><td>' + timeAgo(e.last_seen) + '</td>' +
           '<td><button class="btn btn-ghost btn-sm" data-act="edit" data-id="' + e.id + '">Edit</button> ' + toggle + del + '</td></tr>';
-      }).join('') || emptyRow(6, 'No employees.'), silent);
+      }).join('') || emptyRow(7, 'No employees.'), silent);
       if (changed) tbody.querySelectorAll('[data-act]').forEach(function (b) {
         b.addEventListener('click', function () { empAction(b.getAttribute('data-act'), b.getAttribute('data-id'), rows); });
       });
@@ -1308,6 +1333,7 @@
       f.full_name.value = emp.full_name || '';
       f.username.value = emp.username;
       f.username.disabled = true;
+      if (f.email) f.email.value = emp.email || '';
       f.role.value = emp.role;
       el('pwHint').style.display = '';
       openModal('modalEmployee');
@@ -1348,11 +1374,11 @@
     e.preventDefault();
     var f = e.target;
     if (state.editEmployee) {
-      rpc('update_employee', { p_actor: ACTOR, p_id: state.editEmployee.id, p_full_name: f.full_name.value, p_role: f.role.value, p_password: f.password.value || null })
+      rpc('update_employee', { p_actor: ACTOR, p_id: state.editEmployee.id, p_full_name: f.full_name.value, p_role: f.role.value, p_password: f.password.value || null, p_email: f.email ? f.email.value : null })
         .then(function () { closeModal('modalEmployee'); toast('Account updated.', 'ok'); loadEmployees(true); })
         .catch(function (err) { toast(err.message, 'err'); });
     } else {
-      rpc('create_employee', { p_actor: ACTOR, p_username: f.username.value, p_password: f.password.value, p_full_name: f.full_name.value, p_role: f.role.value })
+      rpc('create_employee', { p_actor: ACTOR, p_username: f.username.value, p_password: f.password.value, p_full_name: f.full_name.value, p_role: f.role.value, p_email: f.email ? f.email.value : null })
         .then(function () { closeModal('modalEmployee'); toast('Account created.', 'ok'); loadEmployees(true); })
         .catch(function (err) { toast(err.message, 'err'); });
     }
@@ -1470,7 +1496,9 @@
   // ACTIVITY LOG (admin)
   // ---------------------------------------------------------------
   var ACT_LABEL = {
-    login: 'Sign in', logout: 'Sign out', patient_register: 'Patient registered',
+    login: 'Sign in', logout: 'Sign out', login_code_sent: '6-digit code sent',
+    password_reset_request: 'Reset code sent', password_reset: 'Password reset',
+    patient_register: 'Patient registered',
     patient_update: 'Patient updated',
     visit_create: 'Visit created', payment: 'Payment collected', lab_start: 'Sent to lab',
     visit_complete: 'Visit completed', refund: 'Refund', employee_create: 'Account created',
