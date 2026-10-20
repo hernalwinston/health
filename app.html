@@ -30,6 +30,10 @@
         <svg viewBox="0 0 24 24" fill="currentColor"><path d="M9 3v6.2L4.6 17A3 3 0 0 0 7.2 21h9.6a3 3 0 0 0 2.6-4L15 9.2V3zm-2 0h10v2H7z"/></svg>
         Laboratory &amp; Payments
       </button>
+      <button class="nav-item" data-view="queue">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M4 5h16v2H4zm0 6h16v2H4zm0 6h10v2H4zm13.5-.5a2 2 0 1 1 2-2 2 2 0 0 1-2 2z"/></svg>
+        Queue
+      </button>
       <button class="nav-item" data-view="receipts">
         <svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 2h9l5 5v13a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2zm8 1.5V8h4.5zM8 11h8v2H8zm0 4h5v2H8z"/></svg>
         Receipts
@@ -109,17 +113,58 @@
           </div>
         </section>
 
+        <!-- QUEUE -->
+        <section class="view hide" id="view-queue">
+          <div class="queue-grid">
+            <div class="panel">
+              <div class="panel-head">
+                <button class="btn btn-primary" id="queueNextBtn">
+                  <svg viewBox="0 0 24 24" fill="currentColor"><path d="M4 11h11.2l-4.6-4.6L12 5l7 7-7 7-1.4-1.4 4.6-4.6H4z"/></svg>
+                  Next Patient
+                </button>
+                <div class="sp tools">
+                  <button class="btn btn-ghost btn-sm" id="queueAddBtn">
+                    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M11 5h2v6h6v2h-6v6h-2v-6H5v-2h6z"/></svg>
+                    Add to Queue
+                  </button>
+                  <a class="btn btn-ghost btn-sm" href="queue.html" target="_blank" rel="noopener">Open Screen</a>
+                </div>
+              </div>
+              <div class="panel-body queue-now" id="queueNow"></div>
+            </div>
+
+            <div class="panel">
+              <div class="panel-head"><h3>Waiting List</h3><span class="badge" id="queueCount">0</span></div>
+              <div class="table-wrap">
+                <table class="data" id="queueTable">
+                  <thead><tr><th>#</th><th>Ticket</th><th>Patient</th><th>Age / Sex</th><th>Contact</th><th>Address</th><th>Purpose</th><th>Waiting</th><th>Actions</th></tr></thead>
+                  <tbody></tbody>
+                </table>
+              </div>
+            </div>
+
+            <div class="panel">
+              <div class="panel-head"><h3>Recently Finished</h3></div>
+              <div class="table-wrap">
+                <table class="data" id="queueDoneTable">
+                  <thead><tr><th>Ticket</th><th>Patient</th><th>Patient No</th><th>Visit</th><th>Ended</th></tr></thead>
+                  <tbody></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </section>
+
         <!-- PATIENTS -->
         <section class="view hide" id="view-patients">
           <div class="panel">
             <div class="panel-head">
-              <h3>Patients</h3>
+              <button class="btn btn-primary" id="addPatientBtn">
+                <svg viewBox="0 0 24 24" fill="currentColor"><path d="M11 5h2v6h6v2h-6v6h-2v-6H5v-2h6z"/></svg>
+                New Patient
+              </button>
               <div class="sp tools">
                 <input class="input search" id="patientSearch" placeholder="Search name, ID, address, referral..." autocomplete="off">
-                <button class="btn btn-primary" id="addPatientBtn">
-                  <svg viewBox="0 0 24 24" fill="currentColor"><path d="M11 5h2v6h6v2h-6v6h-2v-6H5v-2h6z"/></svg>
-                  New Patient
-                </button>
               </div>
             </div>
             <div class="table-wrap">
@@ -135,7 +180,6 @@
         <section class="view hide" id="view-lab">
           <div class="panel">
             <div class="panel-head">
-              <h3>Laboratory &amp; Payments</h3>
               <div class="sp tools">
                 <select class="select" id="visitFilter">
                   <option value="all">All statuses</option>
@@ -161,7 +205,6 @@
         <section class="view hide" id="view-receipts">
           <div class="panel">
             <div class="panel-head">
-              <h3>Receipts</h3>
               <div class="sp tools">
                 <select class="select" id="receiptFilter">
                   <option value="all">All receipts</option>
@@ -186,9 +229,11 @@
         <section class="view hide" id="view-employees">
           <div class="panel">
             <div class="panel-head">
-              <h3>Employees</h3>
-              <div class="sp"><button class="btn btn-primary" id="addEmployeeBtn">
-                <svg viewBox="0 0 24 24" fill="currentColor"><path d="M11 5h2v6h6v2h-6v6h-2v-6H5v-2h6z"/></svg> New Account</button></div>
+              <button class="btn btn-primary" id="addEmployeeBtn">
+                <svg viewBox="0 0 24 24" fill="currentColor"><path d="M11 5h2v6h6v2h-6v6h-2v-6H5v-2h6z"/></svg> New Account</button>
+              <div class="sp tools">
+                <input class="input search" id="employeeSearch" placeholder="Search name, username, email..." autocomplete="off">
+              </div>
             </div>
             <div class="table-wrap">
               <table class="data" id="employeesTable">
@@ -203,11 +248,10 @@
         <section class="view hide" id="view-services">
           <div class="panel">
             <div class="panel-head">
-              <h3>Services &amp; Prices</h3>
+              <button class="btn btn-primary" id="addServiceBtn">
+                <svg viewBox="0 0 24 24" fill="currentColor"><path d="M11 5h2v6h6v2h-6v6h-2v-6H5v-2h6z"/></svg> New Service</button>
               <div class="sp tools">
                 <input class="input search" id="serviceFilterSearch" placeholder="Search services..." autocomplete="off">
-                <button class="btn btn-primary" id="addServiceBtn">
-                  <svg viewBox="0 0 24 24" fill="currentColor"><path d="M11 5h2v6h6v2h-6v6h-2v-6H5v-2h6z"/></svg> New Service</button>
               </div>
             </div>
             <div class="svc-catalog" id="servicesCatalog"></div>
@@ -218,7 +262,6 @@
         <section class="view hide" id="view-reports">
           <div class="panel">
             <div class="panel-head">
-              <h3>Reports</h3>
               <div class="sp tools">
                 <select class="select" id="reportType">
                   <option value="patients">Patients</option>
@@ -244,7 +287,6 @@
         <section class="view hide" id="view-activity">
           <div class="panel">
             <div class="panel-head">
-              <h3>Activity Log</h3>
               <div class="sp tools">
                 <input class="input search" id="activitySearch" placeholder="Search user or action..." autocomplete="off">
                 <input class="input" type="date" id="activityFrom" title="From date">
@@ -267,7 +309,6 @@
         <section class="view hide" id="view-archives">
           <div class="panel">
             <div class="panel-head">
-              <h3>Archives</h3>
               <div class="sp tools">
                 <input class="input search" id="archiveSearch" placeholder="Search name or reference..." autocomplete="off">
                 <button class="btn btn-ghost" id="archiveRefreshBtn">
@@ -297,17 +338,34 @@
       <div class="modal-head"><h3 id="patientModalTitle">New Patient</h3><button type="button" class="x-btn" data-close><svg viewBox="0 0 24 24" fill="currentColor"><path d="M18.3 5.7 12 12l-6.3-6.3-1.4 1.4L10.6 13l-6.3 6.3 1.4 1.4L12 14.4l6.3 6.3 1.4-1.4L13.4 13l6.3-6.3z"/></svg></button></div>
       <div class="modal-body">
         <div class="form-grid">
-          <label class="f full">Full Name<input class="input" name="full_name" required placeholder="Juan Dela Cruz"></label>
-          <label class="f">Age<input class="input" name="age" type="number" min="0" max="130" placeholder="0"></label>
+          <label class="f full">Full Name<input class="input" name="full_name" required placeholder="Juan Dela Cruz" data-req="Full Name"></label>
+          <label class="f">Age<input class="input" name="age" type="number" min="0" max="130" placeholder="0" required data-req="Age"></label>
           <label class="f">Gender
-            <select class="select" name="gender">
+            <select class="select" name="gender" required data-req="Gender">
               <option value="">Select...</option>
               <option>Male</option><option>Female</option><option>Other</option>
             </select>
           </label>
-          <label class="f full">Address<input class="input" name="address" placeholder="Street, Barangay, Municipality"></label>
-          <label class="f">Contact Number<input class="input" name="contact" placeholder="09xx xxx xxxx"></label>
-          <label class="f">Referred By (Doctor)<input class="input" name="referred_by" placeholder="Dr. ..."></label>
+          <label class="f">Province
+            <select class="select" name="province" required data-req="Province">
+              <option value="Cagayan" selected>Cagayan</option>
+            </select>
+          </label>
+          <label class="f">City / Town
+            <select class="select" name="town" required data-req="City / Town">
+              <option value="">Select city / town...</option>
+            </select>
+          </label>
+          <label class="f">Barangay
+            <select class="select" name="barangay" required data-req="Barangay">
+              <option value="">Select barangay...</option>
+            </select>
+          </label>
+          <label class="f">Zone / Purok / Street
+            <input class="input" name="zone" placeholder="e.g. Zone 3, Purok 2, 123 Rizal St." required data-req="Zone / Purok / Street">
+          </label>
+          <label class="f">Contact Number<input class="input" name="contact" placeholder="+63 9xx xxx xxxx" data-phone maxlength="14" inputmode="tel" required data-req="Contact Number"><small class="field-err" name="contact_err"></small></label>
+          <label class="f">Referred By (Doctor)<input class="input" name="referred_by" placeholder="Dr. ..." required data-req="Referred By (Doctor)"></label>
         </div>
       </div>
       <div class="modal-foot">
@@ -343,7 +401,7 @@
         <div class="form-grid">
           <label class="f">Amount Due<input class="input" id="payAmount" name="amount" type="number" step="0.01" min="0"></label>
           <label class="f">Method
-            <select class="select" name="method"><option>Cash</option><option>GCash</option><option>Bank Transfer</option><option>Card</option></select>
+            <select class="select" name="method"><option>Cash</option></select>
           </label>
         </div>
         <p style="font-size:12px;color:var(--amber);margin:4px 0 0">Payment is required before the patient can proceed to the laboratory.</p>
@@ -382,7 +440,7 @@
           <label class="f">Role
             <select class="select" name="role"><option value="employee">Employee</option><option value="admin">Administrator</option></select>
           </label>
-          <label class="f full">Email <span style="font-weight:500;color:var(--muted)">(6-digit sign-in codes are sent here)</span><input class="input" name="email" type="email" placeholder="name@example.com"></label>
+          <label class="f full">Email <span class="label-hint">(6-digit sign-in codes are sent here)</span><input class="input" name="email" type="email" placeholder="name@example.com" required pattern="[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}" title="Please enter a valid email address, for example name@gmail.com"><small class="field-err" name="email_err"></small></label>
           <label class="f full">Password <span id="pwHint" style="font-weight:500;color:var(--muted)">(leave blank to keep current)</span><input class="input" name="password" type="text" placeholder="Set a password"></label>
         </div>
       </div>
@@ -424,6 +482,37 @@
     </div>
   </div>
 
+  <!-- Refund -->
+  <div class="overlay" id="modalRefund">
+    <form class="modal" id="refundForm">
+      <div class="modal-head"><h3>Process Refund</h3><button type="button" class="x-btn" data-close><svg viewBox="0 0 24 24" fill="currentColor"><path d="M18.3 5.7 12 12l-6.3-6.3-1.4 1.4L10.6 13l-6.3 6.3 1.4 1.4L12 14.4l6.3 6.3 1.4-1.4L13.4 13l6.3-6.3z"/></svg></button></div>
+      <div class="modal-body">
+        <p style="margin:0 0 14px;font-size:13px;color:var(--muted)">Visit <strong id="refVisitNo" style="color:var(--navy)"></strong> — Patient <strong id="refPatient" style="color:var(--navy)"></strong></p>
+        <div class="refund-summary">
+          <div><span>Amount Paid</span><b id="refAmount">&#8369;0.00</b></div>
+          <div><span>Items</span><b id="refItems">0</b></div>
+        </div>
+        <label class="f" style="margin-top:14px">Reason for Refund
+          <select class="select" id="refReason">
+            <option>Patient cancelled</option>
+            <option>Patient did not proceed</option>
+            <option>Wrong test / service requested</option>
+            <option>Duplicate payment</option>
+            <option>Other</option>
+          </select>
+        </label>
+        <label class="f" style="margin-top:10px" id="refNoteWrap">Additional note
+          <input class="input" id="refNote" placeholder="Optional details...">
+        </label>
+        <p style="font-size:12px;color:var(--amber);margin:12px 0 0">This marks the visit as refunded and cancels the laboratory request. This cannot be undone.</p>
+      </div>
+      <div class="modal-foot">
+        <button type="button" class="btn btn-ghost" data-close>Cancel</button>
+        <button type="submit" class="btn btn-red">Confirm Refund</button>
+      </div>
+    </form>
+  </div>
+
   <!-- Receipt / lab slip -->
   <div class="overlay" id="modalReceipt">
     <div class="modal">
@@ -460,6 +549,29 @@
     </form>
   </div>
 
+  <!-- Add to queue -->
+  <div class="overlay" id="modalQueue">
+    <form class="modal" id="queueForm">
+      <div class="modal-head"><h3>Add to Queue</h3><button type="button" class="x-btn" data-close><svg viewBox="0 0 24 24" fill="currentColor"><path d="M18.3 5.7 12 12l-6.3-6.3-1.4 1.4L10.6 13l-6.3 6.3 1.4 1.4L12 14.4l6.3 6.3 1.4-1.4L13.4 13l6.3-6.3z"/></svg></button></div>
+      <div class="modal-body">
+        <label class="f full">Patient
+          <input class="input" id="queuePatientSearch" placeholder="Search a registered patient by name or ID..." autocomplete="off">
+        </label>
+        <div class="pick-list" id="queuePatientList" style="max-height:220px;overflow:auto;margin:10px 0"></div>
+        <div class="form-grid">
+          <label class="f"><span>Counter</span><input class="input" name="window_no" placeholder="1"></label>
+          <label class="f full"><span>Or type a name (walk-in, not registered)</span>
+            <input class="input" name="walkin" placeholder="First name will be shown on the screen">
+          </label>
+        </div>
+      </div>
+      <div class="modal-foot">
+        <button type="button" class="btn btn-ghost" data-close>Cancel</button>
+        <button type="submit" class="btn btn-primary">Add to Queue</button>
+      </div>
+    </form>
+  </div>
+
   <div class="toasts" id="toasts"></div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.118.0/dist/umd/supabase.js"></script>
@@ -467,6 +579,7 @@
   <script src="https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
   <script src="js/config.js"></script>
+  <script src="js/cagayan.js"></script>
   <script src="js/app.js"></script>
 </body>
 </html>

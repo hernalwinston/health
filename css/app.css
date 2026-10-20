@@ -81,10 +81,10 @@ button{font-family:inherit}
 }
 @keyframes cardFloat{0%,100%{translate:0 0}50%{translate:0 -9px}}
 .auth-brand{display:flex;align-items:center;gap:12px;justify-content:center;margin-bottom:22px}
-.auth-brand img{width:65px;height:65px;object-fit:contain;animation:pop .6s var(--ease) both,brandBob 6s ease-in-out 1s infinite}
+.auth-brand img{width:71px;height:71px;object-fit:contain;animation:pop .6s var(--ease) both,brandBob 6s ease-in-out 1s infinite}
 @keyframes pop{from{opacity:0;transform:scale(.6) rotate(-8deg)}to{opacity:1;transform:none}}
 @keyframes brandBob{0%,100%{translate:0 0}50%{translate:0 -4px}}
-.auth-brand strong{display:block;font:800 17px 'Manrope',sans-serif;color:var(--ink);line-height:1.1}
+.auth-brand strong{display:block;font:800 19px 'Manrope',sans-serif;color:var(--ink);line-height:1.1}
 .auth-brand small{display:block;font-size:11px;color:var(--muted)}
 .auth-card h1{font-size:22px;text-align:center;margin-bottom:6px}
 .auth-card .sub{text-align:center;color:var(--muted);font-size:13px;margin:0 0 26px}
@@ -145,16 +145,16 @@ button{font-family:inherit}
 .auth-foot a:hover{text-decoration:underline}
 
 /* ============================ APP SHELL ============================ */
-.app{display:grid;grid-template-columns:250px 1fr;min-height:100vh}
+.app{display:grid;grid-template-columns:264px 1fr;min-height:100vh}
 .app[hidden]{display:none}
 .sidebar{
   background:linear-gradient(180deg,#0a3c7a,#082b58);color:#cfe1f7;padding:20px 16px;
   display:flex;flex-direction:column;gap:6px;position:sticky;top:0;height:100vh;overflow-y:auto;
 }
 .side-brand{display:flex;align-items:center;gap:11px;padding:8px 8px 18px;border-bottom:1px solid #ffffff1a;margin-bottom:12px}
-.side-brand img{width:55px;height:55px;object-fit:contain}
-.side-brand strong{display:block;color:#fff;font:800 14px 'Manrope',sans-serif;line-height:1.15}
-.side-brand small{display:block;color:#8fb4dd;font-size:10px}
+.side-brand img{width:63px;height:63px;object-fit:contain}
+.side-brand strong{display:block;color:#fff;font:800 22px 'Manrope',sans-serif;line-height:1.1;letter-spacing:-.3px}
+.side-brand small{display:block;color:#8fb4dd;font-size:13px}
 .nav-item{
   display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:12px;color:#cfe1f7;
   font-size:13.5px;font-weight:600;cursor:pointer;border:0;background:transparent;width:100%;text-align:left;
@@ -181,8 +181,8 @@ button{font-family:inherit}
 .hamburger.open span:first-child{transform:translateY(7px) rotate(45deg)}
 .hamburger.open span:nth-child(2){opacity:0}
 .hamburger.open span:last-child{transform:translateY(-7px) rotate(-45deg)}
-.page-title{font-size:19px}
-.page-title small{display:block;color:var(--muted);font:500 12px 'DM Sans',sans-serif;margin-top:2px}
+.page-title{font-size:29px;line-height:1.18;letter-spacing:-.4px}
+.page-title small{display:block;color:var(--muted);font:500 14px 'DM Sans',sans-serif;margin-top:4px}
 .top-right{margin-left:auto;display:flex;align-items:center;gap:12px}
 .pill-time{background:#eaf4ff;color:var(--blue2);border:1px solid #d3e8ff;padding:8px 14px;border-radius:99px;font-size:12px;font-weight:700;white-space:nowrap}
 .content{padding:26px;display:flex;flex-direction:column;gap:22px;animation:fadeUp .5s var(--ease) both}
@@ -214,6 +214,9 @@ button{font-family:inherit}
 .panel-head{display:flex;align-items:center;gap:14px;padding:18px 22px;border-bottom:1px solid var(--border);flex-wrap:wrap}
 .panel-head h3{font-size:15px}
 .panel-head .sp{margin-left:auto;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+/* Primary action on the LEFT, searches/filters pushed to the RIGHT.
+   Each search/filter balances itself with margin-left:auto. */
+.panel-head .tools>*:not(.btn-primary){margin-left:auto}
 .panel-body{padding:20px 22px}
 .charts{grid-template-columns:repeat(2,minmax(0,1fr))}
 .chart-box{position:relative;height:260px}
@@ -225,7 +228,29 @@ button{font-family:inherit}
   color:var(--text);background:#f8fbff;outline:none;transition:border-color .22s,box-shadow .22s,background .22s;min-width:0;
 }
 .input:focus,.select:focus{border-color:#7cc0f6;background:#fff;box-shadow:0 0 0 4px #0875e81a}
-.input.search{min-width:230px;flex:1}
+/* Dropdown arrow: always the browser's own arrow, nudged 5px further left
+   from the right edge so it clears the rounded corner of every select. */
+.select{
+  -webkit-appearance:none;appearance:none;
+  padding-right:29px;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%237189AE'%3E%3Cpath d='M7 10l5 5 5-5z'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;
+  background-position:right 5px center;
+  background-size:18px 18px;
+  text-overflow:ellipsis;
+}
+.select::-ms-expand{display:none}
+/* Any select that also carries .input (e.g. the service category picker)
+   gets the same arrow treatment. Tried LAST so it wins over the base rule. */
+select.input,select.select,.input.svc-select{
+  -webkit-appearance:none;appearance:none;
+  padding-right:29px;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%237189AE'%3E%3Cpath d='M7 10l5 5 5-5z'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;
+  background-position:right 5px center;
+  background-size:18px 18px;
+}
+.input.search{min-width:0;width:265px;flex:0 0 265px}
 
 /* ============================ BUTTONS ============================ */
 .btn{
@@ -255,6 +280,10 @@ button{font-family:inherit}
 .confirm-msg{margin:0 0 20px;font-size:13.5px;line-height:1.55;color:var(--muted)}
 .confirm-msg b{color:var(--navy)}
 .confirm-foot{display:flex;gap:10px;justify-content:center}
+.refund-summary{display:flex;gap:10px}
+.refund-summary>div{flex:1;border:1px solid #f0d9d7;background:#fff7f6;border-radius:10px;padding:10px 14px;text-align:center}
+.refund-summary span{display:block;font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:#c08b88}
+.refund-summary b{display:block;margin-top:4px;font:800 18px 'Manrope';color:#c02b2b}
 .confirm-modal.tone-danger .confirm-ico{background:#fdecec;color:#c02b2b}
 .confirm-modal.tone-ok .confirm-ico{background:#e6f7ee;color:#0c7a43}
 .confirm-modal.tone-warn .confirm-ico{background:#fff3e0;color:#c77700}
@@ -333,6 +362,25 @@ label.f .input,label.f .select{width:100%}
 .pick-group{font:800 11px 'Manrope';text-transform:uppercase;letter-spacing:.6px;color:#5f7590;padding:8px 4px 2px}
 .total-row{display:flex;justify-content:space-between;align-items:center;margin-top:14px;padding:14px 16px;border-radius:12px;background:#eef7ff;font:800 16px 'Manrope';color:var(--navy)}
 
+/* ---- queue view ---- */
+.queue-grid{display:grid;gap:16px}
+.queue-now{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;padding:30px 20px;text-align:center;min-height:220px}
+.queue-now .qn-label{font:800 12px 'Manrope';letter-spacing:2px;text-transform:uppercase;color:var(--blue)}
+.queue-now .qn-ticket{font:800 64px 'Manrope';line-height:1;color:var(--navy);letter-spacing:-2px}
+.queue-now .qn-name{font:700 22px 'Manrope';color:#24476f}
+.queue-now .qn-meta{font:500 13px 'DM Sans';color:#5f7590}
+.queue-now .qn-win{margin-top:8px;font:700 13px 'Manrope';color:#5f7590;background:#eef7ff;border-radius:999px;padding:6px 16px}
+.queue-now .qn-none{font:700 18px 'Manrope';color:var(--muted)}
+.queue-now .qn-none small{display:block;font:400 13px 'DM Sans';color:#8aa0b8;margin-top:6px}
+.queue-now .qn-actions{display:flex;gap:8px;margin-top:16px}
+#queueTable td .btn,#queueTable td .q-actions{white-space:nowrap}
+#queueTable td .nm{display:block;font-weight:600;color:#24476f}
+#queueTable td .nm .cat{display:block;font-size:10px;color:var(--muted);font-weight:400}
+#queueTable td{vertical-align:top}
+.q-actions{display:inline-flex;gap:6px}
+
+
+
 /* record timeline */
 .rec-summary{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:18px}
 .rec-summary div{background:#f4f9ff;border:1px solid var(--border);border-radius:12px;padding:12px}
@@ -389,7 +437,7 @@ label.f .input,label.f .select{width:100%}
 @media(max-width:860px){
   .app{grid-template-columns:1fr}
   .sidebar{
-    position:fixed;top:0;left:0;bottom:0;width:260px;z-index:70;transform:translateX(-102%);
+    position:fixed;top:0;left:0;bottom:0;width:272px;z-index:70;transform:translateX(-102%);
     transition:transform .3s var(--ease);height:100vh;
   }
   .sidebar.open{transform:none;box-shadow:0 0 60px rgba(0,0,0,.35)}
@@ -405,7 +453,7 @@ label.f .input,label.f .select{width:100%}
   .stats{grid-template-columns:1fr}
   .rec-summary{grid-template-columns:1fr}
   .pill-time{display:none}
-  .page-title{font-size:16px}
+  .page-title{font-size:26px}
 }
 @media(prefers-reduced-motion:reduce){
   *,*::before,*::after{animation-duration:.001ms!important;animation-iteration-count:1!important;transition-duration:.001ms!important}
@@ -486,7 +534,7 @@ label.f .input,label.f .select{width:100%}
 .svc-catalog{display:flex;flex-direction:column;gap:14px;padding:18px 22px}
 .svc-filter{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
 .svc-filter label{font:700 11px 'DM Sans',sans-serif;letter-spacing:.05em;text-transform:uppercase;color:#7b93ad}
-.svc-select{width:260px;max-width:100%;cursor:pointer;padding:9px 12px}
+.svc-select{width:260px;max-width:100%;cursor:pointer;padding:9px 29px 9px 12px}
 .svc-count{margin-left:auto;font:600 12.5px 'DM Sans',sans-serif;color:var(--muted)}
 .svc-list{border:1px solid var(--border);border-radius:14px;overflow:hidden;background:#fff}
 .svc-thead{display:flex;align-items:center;gap:14px;padding:9px 18px;background:#f7fbff;font:700 10.5px 'DM Sans',sans-serif;letter-spacing:.05em;text-transform:uppercase;color:#7b93ad}
@@ -596,3 +644,8 @@ table.data tbody.no-anim tr,
   #modalReceipt .modal-body{max-height:none!important;overflow:visible!important;padding:0!important}
   #modalReceipt .modal-head,#modalReceipt .modal-foot{display:none!important}
 }
+
+/* ---- field-level validation (employee email) ---- */
+.label-hint{font-weight:500;color:var(--muted)}
+.field-err{display:none;margin-top:5px;font-size:12px;font-weight:600;color:var(--danger,#e5484d)}
+.input.bad,.input.bad:focus{border-color:var(--danger,#e5484d);box-shadow:0 0 0 3px rgba(229,72,77,.12)}

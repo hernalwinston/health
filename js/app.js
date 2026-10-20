@@ -31,7 +31,7 @@
   try { window.Session.save(fresh); } catch (e) { /* storage may be unavailable */ }
 
   var db = window.db;
-  var state = { services: [], visits: [], receipts: [], patients: [], archived: { patients: [], visits: [] }, recordPatient: null, editPatient: null, editEmployee: null, editService: null, charts: {} };
+  var state = { services: [], visits: [], receipts: [], patients: [], archived: { patients: [], visits: [] }, recordPatient: null, editPatient: null, editEmployee: null, editService: null, charts: {}, afterVisit: null, payChain: false };
 
   // ---------------------------------------------------------------
   // Small helpers
@@ -208,6 +208,7 @@
     dashboard: ['Dashboard', 'Clinic overview'],
     patients: ['Patients', 'Register and view patient records'],
     lab: ['Laboratory & Payments', 'Collect payment and process lab requests'],
+    queue: ['Queue', 'Call the next patient and manage the waiting line'],
     employees: ['Employees', 'Manage staff accounts and activity'],
     services: ['Services & Prices', 'Manage the service catalog'],
     receipts: ['Receipts', 'Search, store and print patient receipts'],
@@ -247,6 +248,7 @@
     if (view === 'dashboard') loadDashboard(silent);
     else if (view === 'patients') loadPatients(silent);
     else if (view === 'lab') loadVisits(silent);
+    else if (view === 'queue') loadQueue(silent);
     else if (view === 'employees') loadEmployees(silent);
     else if (view === 'services') loadServices(silent);
     else if (view === 'receipts') loadReceipts(silent);
@@ -433,6 +435,11 @@
   el('addPatientBtn').addEventListener('click', function () {
     state.editPatient = null;
     var f = el('patientForm'); f.reset();
+    f.province.value = 'Cagayan';
+    fillTowns(f.town, '');
+    fillBarangays(f.barangay, '', '');
+    f.zone.value = '';
+    clearFieldErrors(f);
     el('patientModalTitle').textContent = 'New Patient';
     f.querySelector('button[type=submit]').textContent = 'Save Patient';
     openModal('modalPatient');
@@ -479,16 +486,92 @@
     }).catch(function (e) { done(); if (!silent) toast(e.message, 'err'); });
   }
 
+  // ---- Address cascade: Province -> City/Town -> Barangay + Zone ----
+  // The whole address is stored as one text line so every existing table,
+  // search and receipt keeps working; we can still split it back for editing.
+  var CAG = window.CAGAYAN || { towns: {}, townsList: function () { return []; }, barangaysOf: function () { return []; } };
+
+  function fillTowns(select, keepValue) {
+    var towns = CAG.townsList();
+    select.innerHTML = '<option value="">Select city / town...</option>' +
+      towns.map(function (t) { return '<option>' + esc(t) + '</option>'; }).join('');
+    select.value = (keepValue && towns.indexOf(keepValue) >= 0) ? keepValue : '';
+  }
+  function fillBarangays(select, town, keepValue) {
+    var list = CAG.barangaysOf(town);
+    select.innerHTML = '<option value="">' +
+      (town ? 'Select barangay...' : 'Choose a city / town first') + '</option>' +
+      list.map(function (b) { return '<option>' + esc(b) + '</option>'; }).join('');
+    select.disabled = !town;
+    select.value = (keepValue && list.indexOf(keepValue) >= 0) ? keepValue : '';
+  }
+  function composeAddress(f) {
+    var parts = [
+      (f.zone.value || '').trim(),
+      f.barangay.value,
+      f.town.value,
+      f.province.value || 'Cagayan'
+    ].filter(function (x) { return x; });
+    return parts.join(', ');
+  }
+  // Best-effort split of a stored address back into the four fields.
+  function parseAddress(f, address) {
+    var province = 'Cagayan', town = '', barangay = '', zone = '';
+    var raw = (address || '').trim();
+    var towns = CAG.townsList();
+    if (raw) {
+      var segs = raw.split(',').map(function (s) { return s.trim(); }).filter(function (x) { return x; });
+      if (segs.length && /cagayan/i.test(segs[segs.length - 1])) province = segs.pop();
+      town = segs.pop() || '';
+      if (town && towns.indexOf(town) >= 0) barangay = segs.pop() || '';
+      zone = segs.join(', ');
+    }
+    f.province.value = province || 'Cagayan';
+    fillTowns(f.town, town);
+    fillBarangays(f.barangay, f.town.value, barangay);
+    f.zone.value = zone;
+  }
+
+  (function () {
+    var f = el('patientForm');
+    fillTowns(f.town, '');
+    fillBarangays(f.barangay, '', '');
+    f.town.addEventListener('change', function () {
+      fillBarangays(f.barangay, f.town.value, '');
+    });
+  })();
+
   el('patientForm').addEventListener('submit', function (e) {
     e.preventDefault();
     var f = e.target;
+    // Every field must be filled in before a patient can be saved.
+    var missing = null;
+    f.querySelectorAll('[data-req]').forEach(function (inp) {
+      if (missing) return;
+      var val = String(inp.value == null ? '' : inp.value).trim();
+      if (val === '') { missing = inp; return; }
+      if (inp.name === 'age') {
+        var n = parseInt(val, 10);
+        if (isNaN(n) || n < 0 || n > 130) { missing = inp; return; }
+      }
+    });
+    if (missing) {
+      showFieldError(missing, 'This field is required.');
+      missing.focus();
+      toast('Please fill up ' + (missing.getAttribute('data-req') || 'all fields') + '.', 'warn');
+      return;
+    }
+    showFieldError(f.contact, '');
+    var phoneMsg = phoneProblem(f.contact.value);
+    showFieldError(f.contact, phoneMsg);
+    if (phoneMsg) { toast(phoneMsg, 'err'); return; }
     var params = {
       p_actor: ACTOR,
       p_full_name: f.full_name.value,
       p_age: f.age.value === '' ? null : parseInt(f.age.value, 10),
       p_gender: f.gender.value,
-      p_address: f.address.value,
-      p_contact: f.contact.value,
+      p_address: composeAddress(f),
+      p_contact: formatPhone(f.contact.value),
       p_referred_by: f.referred_by.value
     };
     if (state.editPatient) {
@@ -507,7 +590,8 @@
       toast('Patient ' + p.patient_no + ' registered.', 'ok');
       loadPatients(true);
       state._lastPatient = p;
-      if (confirm('Patient saved. Create a laboratory visit now?')) openVisitModal(p);
+      state.afterVisit = { patient: p };
+      openVisitModal(p);
     }).catch(function (err) { toast(err.message, 'err'); });
   });
 
@@ -516,10 +600,11 @@
     state.editPatient = p;
     var f = el('patientForm');
     f.reset();
+    clearFieldErrors(f);
     f.full_name.value = p.full_name || '';
     f.age.value = p.age == null ? '' : p.age;
     f.gender.value = p.gender || '';
-    f.address.value = p.address || '';
+    parseAddress(f, p.address || '');
     f.contact.value = p.contact || '';
     f.referred_by.value = p.referred_by || '';
     el('patientModalTitle').textContent = 'Edit Patient';
@@ -710,13 +795,38 @@
       if (cb.checked) items.push({ service_id: cb.value, name: cb.getAttribute('data-name'), price: num(row.querySelector('.price').value) });
     });
     if (!items.length) { toast('Please select at least one service.', 'warn'); return; }
+    var chain = !!state.afterVisit;
     rpc('create_visit', { p_actor: ACTOR, p_patient_id: state.visitPatient.id, p_items: items }).then(function (v) {
       closeModal('modalVisit');
-      toast('Visit ' + v.visit_no + ' created. Payment required.', 'ok');
-      loaded.lab = false;
-      show('lab');
+      var p = state.visitPatient;
+      state.afterVisit = null;
+      // Register the patient into the queue for today's laboratory work.
+      joinQueueFor(p, 'Laboratory', v.id);
+      if (chain) {
+        // Chained from "Add Patient -> Laboratory": pay right away, then receipt.
+        openPaymentFor(v, { chain: true });
+      } else {
+        toast('Visit ' + v.visit_no + ' created. Payment required.', 'ok');
+        loaded.lab = false;
+        show('lab');
+      }
     }).catch(function (err) { toast(err.message, 'err'); });
   });
+
+  // Add a visit (or walk-in) to the queue without leaving the current flow.
+  function joinQueueFor(patient, purpose, visitId) {
+    if (!patient) return;
+    loaded.queue = false;
+    rpc('join_queue', {
+      p_actor: ACTOR, p_visit_id: visitId || null,
+      p_name: patient.full_name || '', p_purpose: purpose || 'Laboratory'
+    }).then(function (r) {
+      toast('Ticket ' + r.queue_no + ' added to the queue.', 'ok');
+      if (el('view-queue') && !el('view-queue').classList.contains('hide')) loadQueue(true);
+    }).catch(function (e) { /* patient is already in the queue, etc. */
+      if (!/already in the queue/i.test(e.message)) toast(e.message, 'warn');
+    });
+  }
 
   // ---------------------------------------------------------------
   // VISITS / LAB / PAYMENTS
@@ -785,15 +895,26 @@
 
   function findVisit(id) { return state.visits.filter(function (v) { return v.id === id; })[0]; }
 
+  // Open the payment modal for a visit. Pass chain:true when the visit was
+  // just created from the Laboratory flow, so paying prints the receipt next.
+  function openPaymentFor(v, opts) {
+    opts = opts || {};
+    var patient = state.visitPatient && state.visitPatient.id === v.patient_id
+      ? state.visitPatient : { full_name: v.patient_name, id: v.patient_id };
+    state.payPatient = patient;
+    state.payChain = !!opts.chain;
+    el('payVisitNo').textContent = v.visit_no;
+    el('payPatient').textContent = v.patient_name || patient.full_name || '';
+    el('payAmount').value = num(v.total).toFixed(2);
+    el('paymentForm').dataset.visit = v.id;
+    openModal('modalPayment');
+  }
+
   function doVisitAction(act, id) {
     var v = findVisit(id);
     if (!v) return;
     if (act === 'pay') {
-      el('payVisitNo').textContent = v.visit_no;
-      el('payPatient').textContent = v.patient_name;
-      el('payAmount').value = num(v.total).toFixed(2);
-      el('paymentForm').dataset.visit = id;
-      openModal('modalPayment');
+      openPaymentFor(v);
     } else if (act === 'lab') {
       rpc('start_lab', { p_actor: ACTOR, p_visit_id: id }).then(function () { toast('Patient moved to laboratory.', 'ok'); refreshVisits(); })
         .catch(function (e) { toast(e.message, 'err'); });
@@ -801,15 +922,60 @@
       rpc('complete_visit', { p_actor: ACTOR, p_visit_id: id }).then(function () { toast('Visit completed.', 'ok'); refreshVisits(); })
         .catch(function (e) { toast(e.message, 'err'); });
     } else if (act === 'refund') {
-      if (!confirm('Refund visit ' + v.visit_no + '? This cancels the laboratory request.')) return;
-      rpc('refund_visit', { p_actor: ACTOR, p_visit_id: id, p_reason: 'Refunded at front desk' }).then(function () { toast('Visit refunded.', 'warn'); refreshVisits(); })
-        .catch(function (e) { toast(e.message, 'err'); });
+      openRefund(v);
     } else if (act === 'receipt') {
       openReceipt(v);
     } else if (act === 'archive') {
       archiveRecord('visit', v.id, v.visit_no + ' · ' + v.patient_name);
     }
   }
+
+  // ---------------------------------------------------------------
+  // REFUND
+  // ---------------------------------------------------------------
+  function openRefund(v) {
+    if (!v) return;
+    if (v.status === 'pending_payment') { toast('This visit has not been paid yet.', 'warn'); return; }
+    if (v.status === 'refunded') { toast('This visit was already refunded.', 'warn'); return; }
+    if (v.status === 'completed') { toast('A completed visit cannot be refunded.', 'warn'); return; }
+    state.refundVisit = v;
+    el('refVisitNo').textContent = v.visit_no;
+    el('refPatient').textContent = v.patient_name + (v.patient_no ? ' (' + v.patient_no + ')' : '');
+    el('refAmount').textContent = money(v.total);
+    el('refItems').textContent = '\u2026';
+    var f = el('refundForm');
+    f.reset();
+    openModal('modalRefund');
+    // Pull the real items + paid amount for an accurate summary.
+    rpc('get_patient_record', { p_actor: ACTOR, p_patient_id: v.patient_id }).then(function (data) {
+      var visit = (data.visits || []).filter(function (x) { return x.id === v.id; })[0] || {};
+      var pays = visit.payments || [];
+      var paid = 0; pays.forEach(function (x) { if (x.status === 'paid') paid += num(x.amount); });
+      var n = (visit.items || []).length;
+      el('refAmount').textContent = money(paid || num(v.total));
+      el('refItems').textContent = n + (n === 1 ? ' item' : ' items');
+    }).catch(function () {
+      el('refAmount').textContent = money(v.total);
+      el('refItems').textContent = '\u2014';
+    });
+  }
+
+  el('refundForm').addEventListener('submit', function (e) {
+    e.preventDefault();
+    var v = state.refundVisit;
+    if (!v) return;
+    var reason = el('refReason').value;
+    var note = (el('refNote').value || '').trim();
+    if (note) reason += ' — ' + note;
+    var btn = e.target.querySelector('button[type=submit]');
+    btn.disabled = true;
+    rpc('refund_visit', { p_actor: ACTOR, p_visit_id: v.id, p_reason: reason }).then(function () {
+      btn.disabled = false;
+      closeModal('modalRefund');
+      toast('Visit refunded.', 'warn');
+      loadVisits(true);
+    }).catch(function (err) { btn.disabled = false; toast(err.message, 'err'); });
+  });
 
   // ---------------------------------------------------------------
   // RECEIPT / LAB SLIP
@@ -1280,10 +1446,26 @@
     e.preventDefault();
     var id = e.target.dataset.visit;
     var f = e.target;
+    var chain = !!state.payChain;
+    state.payChain = false;
     rpc('record_payment', { p_actor: ACTOR, p_visit_id: id, p_method: f.method.value, p_amount: num(f.amount.value) })
-      .then(function () { closeModal('modalPayment'); toast('Payment recorded. Patient may proceed to the laboratory.', 'ok'); refreshVisits(); })
+      .then(function () {
+        closeModal('modalPayment');
+        toast('Payment recorded. Patient may proceed to the laboratory.', 'ok');
+        refreshVisits();
+        if (chain) showReceiptForVisit(id);
+      })
       .catch(function (err) { toast(err.message, 'err'); });
   });
+
+  // Fetch the freshly paid visit and print its receipt (used after chained payment).
+  function showReceiptForVisit(visitId) {
+    rpc('list_visits', { p_actor: ACTOR, p_filter: 'all' }).then(function (rows) {
+      state.visits = rows || [];
+      var v = findVisit(visitId);
+      if (v) openReceipt(v);
+    }).catch(function (e) { toast(e.message, 'err'); });
+  }
 
   // ---------------------------------------------------------------
   // EMPLOYEES (admin)
@@ -1293,33 +1475,59 @@
     el('empTitle').textContent = 'New Account';
     el('employeeForm').reset();
     el('employeeForm').username.disabled = false;
+    showFieldError(el('employeeForm').email, '');
     openModal('modalEmployee');
   });
+
+  var empRows = [];
+  var empQuery = '';
+  var empTimer;
+  el('employeeSearch').addEventListener('input', function () {
+    clearTimeout(empTimer);
+    empTimer = setTimeout(function () {
+      empQuery = el('employeeSearch').value.trim().toLowerCase();
+      paintEmployees(el('employeesTable').querySelector('tbody'));
+    }, 200);
+  });
+
+  function empMatch(e) {
+    if (!empQuery) return true;
+    var hay = ((e.full_name || '') + ' ' + (e.username || '') + ' ' + (e.email || '')).toLowerCase();
+    return hay.indexOf(empQuery) !== -1;
+  }
+
+  function empRow(e) {
+    var status = e.is_online ? '<span class="badge b-on">Active</span>' : '<span class="badge b-off">Not active</span>';
+    if (!e.is_active) status = '<span class="badge b-off">Disabled</span>';
+    var roleBadge = e.role === 'admin' ? '<span class="badge b-admin">Admin</span>' : '<span class="badge b-emp">Employee</span>';
+    var toggle = e.is_active
+      ? '<button class="btn btn-ghost btn-sm" data-act="disable" data-id="' + e.id + '">Disable</button>'
+      : '<button class="btn btn-green btn-sm" data-act="enable" data-id="' + e.id + '">Enable</button>';
+    var del = e.id === ACTOR ? '' : ' <button class="btn btn-danger btn-sm" data-act="delete" data-id="' + e.id + '">Delete</button>';
+    var mail = e.email
+      ? esc(e.email)
+      : '<span style="color:var(--muted)">Not set</span>';
+    return '<tr><td><strong>' + esc(e.full_name || e.username) + '</strong></td><td>' + esc(e.username) + '</td>' +
+      '<td>' + mail + '</td>' +
+      '<td>' + roleBadge + '</td><td>' + status + '</td><td>' + timeAgo(e.last_seen) + '</td>' +
+      '<td><button class="btn btn-ghost btn-sm" data-act="edit" data-id="' + e.id + '">Edit</button> ' + toggle + del + '</td></tr>';
+  }
+
+  function paintEmployees(tbody) {
+    var shown = empRows.filter(empMatch);
+    setHtml(tbody, shown.map(empRow).join('') || emptyRow(7, empQuery ? 'No matching employees.' : 'No employees.'), false);
+    tbody.querySelectorAll('[data-act]').forEach(function (b) {
+      b.addEventListener('click', function () { empAction(b.getAttribute('data-act'), b.getAttribute('data-id'), empRows); });
+    });
+  }
 
   function loadEmployees(silent) {
     var tbody = el('employeesTable').querySelector('tbody');
     var done = beginLoad(tbody, 7, 4, silent);
     rpc('list_employees', { p_actor: ACTOR }).then(function (rows) {
       done();
-      var changed = setHtml(tbody, (rows || []).map(function (e) {
-        var status = e.is_online ? '<span class="badge b-on">Active</span>' : '<span class="badge b-off">Not active</span>';
-        if (!e.is_active) status = '<span class="badge b-off">Disabled</span>';
-        var roleBadge = e.role === 'admin' ? '<span class="badge b-admin">Admin</span>' : '<span class="badge b-emp">Employee</span>';
-        var toggle = e.is_active
-          ? '<button class="btn btn-ghost btn-sm" data-act="disable" data-id="' + e.id + '">Disable</button>'
-          : '<button class="btn btn-green btn-sm" data-act="enable" data-id="' + e.id + '">Enable</button>';
-        var del = e.id === ACTOR ? '' : ' <button class="btn btn-danger btn-sm" data-act="delete" data-id="' + e.id + '">Delete</button>';
-        var mail = e.email
-          ? esc(e.email)
-          : '<span style="color:var(--muted)">Not set</span>';
-        return '<tr><td><strong>' + esc(e.full_name || e.username) + '</strong></td><td>' + esc(e.username) + '</td>' +
-          '<td>' + mail + '</td>' +
-          '<td>' + roleBadge + '</td><td>' + status + '</td><td>' + timeAgo(e.last_seen) + '</td>' +
-          '<td><button class="btn btn-ghost btn-sm" data-act="edit" data-id="' + e.id + '">Edit</button> ' + toggle + del + '</td></tr>';
-      }).join('') || emptyRow(7, 'No employees.'), silent);
-      if (changed) tbody.querySelectorAll('[data-act]').forEach(function (b) {
-        b.addEventListener('click', function () { empAction(b.getAttribute('data-act'), b.getAttribute('data-id'), rows); });
-      });
+      empRows = rows || [];
+      paintEmployees(tbody);
     }).catch(function (e) { done(); if (!silent) toast(e.message, 'err'); });
   }
 
@@ -1336,6 +1544,7 @@
       if (f.email) f.email.value = emp.email || '';
       f.role.value = emp.role;
       el('pwHint').style.display = '';
+      showFieldError(f.email, '');
       openModal('modalEmployee');
     } else if (act === 'disable' || act === 'enable') {
       var disabling = act === 'disable';
@@ -1370,17 +1579,112 @@
     }
   }
 
+  // Mirrors public.fn_email_error() in schema.sql so the browser catches a
+  // typo before the round-trip. Returns a message, or null when it is fine.
+  function emailProblem(value) {
+    var v = String(value == null ? '' : value).trim().toLowerCase();
+    if (!v) return 'Please enter an email address.';
+    if (/\s/.test(v)) return 'An email address cannot contain spaces.';
+    var at = v.split('@');
+    if (at.length !== 2) return 'Please enter a valid email address (it needs exactly one @ sign).';
+    if (v.indexOf('..') >= 0) return 'Please enter a valid email address.';
+    if (v.length > 254) return 'That email address is too long.';
+    if (!/^[a-z0-9]([a-z0-9._%+\-]*[a-z0-9])?@[a-z0-9]([a-z0-9\-]*[a-z0-9])?(\.[a-z0-9]([a-z0-9\-]*[a-z0-9])?)*\.[a-z]{2,}$/.test(v)) {
+      return 'Please enter a valid email address, for example name@gmail.com.';
+    }
+    if (['info','admin','support','noreply','no-reply','postmaster','webmaster','mailer-daemon','abuse','sales','contact','office'].indexOf(at[0]) >= 0) {
+      return 'That looks like a shared inbox. Please use the person\u2019s own email.';
+    }
+    return null;
+  }
+
+  function showFieldError(input, msg) {
+    if (!input) return;
+    var small = input.parentNode && input.parentNode.querySelector('.field-err');
+    if (small) { small.textContent = msg || ''; small.style.display = msg ? 'block' : 'none'; }
+    input.setCustomValidity(msg || '');
+    input.classList.toggle('bad', !!msg);
+  }
+
+  // Clear the "required" / invalid state from every field in a form.
+  function clearFieldErrors(form) {
+    if (!form) return;
+    form.querySelectorAll('.bad').forEach(function (n) { n.classList.remove('bad'); });
+    form.querySelectorAll('.field-err').forEach(function (n) { n.textContent = ''; n.style.display = 'none'; });
+    form.querySelectorAll('input,select,textarea').forEach(function (n) { try { n.setCustomValidity(''); } catch (e) {} });
+  }
+
+  // Philippine mobile number. Always normalised to +63 9XXXXXXXXX.
+  function normalizePhone(value) {
+    var digits = String(value == null ? '' : value).replace(/\D/g, '');
+    if (!digits) return '';
+    if (digits.indexOf('63') === 0) digits = digits.slice(2);
+    if (digits.indexOf('0') === 0) digits = digits.slice(1);
+    return digits;
+  }
+  function formatPhone(value) {
+    var d = normalizePhone(value);
+    if (!d) return '';
+    return '+63 ' + d;
+  }
+  function phoneProblem(value) {
+    var v = String(value == null ? '' : value).trim();
+    if (!v) return null;                       // contact is optional
+    if (v.charAt(0) !== '+') return 'Contact number must start with +63 (Philippines).';
+    if (v.slice(0, 3) !== '+63') return 'Contact number must start with +63 (Philippines).';
+    var d = normalizePhone(v);
+    if (d.length !== 10) return 'Enter a 10-digit mobile number, e.g. +63 917 574 4643.';
+    if (d.charAt(0) !== '9') return 'A Philippine mobile number starts with +63 9xx.';
+    return null;
+  }
+
+  (function () {
+    var em = el('employeeForm').email;
+    if (!em) return;
+    em.addEventListener('blur', function () {
+      showFieldError(em, em.value.trim() ? emailProblem(em.value) : '');
+    });
+    em.addEventListener('input', function () {
+      if (em.classList.contains('bad')) showFieldError(em, em.value.trim() ? emailProblem(em.value) : '');
+    });
+  })();
+
+  // Philippine phone inputs: auto-add the +63 prefix and keep it tidy.
+  (function () {
+    document.querySelectorAll('input[data-phone]').forEach(function (inp) {
+      inp.addEventListener('focus', function () {
+        if (!inp.value.trim()) inp.value = '+63 ';
+      });
+      inp.addEventListener('blur', function () {
+        if (!normalizePhone(inp.value)) { inp.value = ''; showFieldError(inp, ''); return; }
+        inp.value = formatPhone(inp.value);
+        showFieldError(inp, phoneProblem(inp.value));
+      });
+      inp.addEventListener('input', function () {
+        // Keep only digits (after dropping the +63 / leading 0) and cap at 10,
+        // so the field can never hold more than a real PH mobile number.
+        var d = normalizePhone(inp.value).slice(0, 10);
+        inp.value = '+63 ' + d;
+        try { inp.selectionStart = inp.selectionEnd = inp.value.length; } catch (e) {}
+        if (inp.classList.contains('bad')) showFieldError(inp, phoneProblem(inp.value));
+      });
+    });
+  })();
+
   el('employeeForm').addEventListener('submit', function (e) {
     e.preventDefault();
     var f = e.target;
+    var emailMsg = emailProblem(f.email && f.email.value);
+    showFieldError(f.email, emailMsg);
+    if (emailMsg) { toast(emailMsg, 'err'); return; }
     if (state.editEmployee) {
       rpc('update_employee', { p_actor: ACTOR, p_id: state.editEmployee.id, p_full_name: f.full_name.value, p_role: f.role.value, p_password: f.password.value || null, p_email: f.email ? f.email.value : null })
         .then(function () { closeModal('modalEmployee'); toast('Account updated.', 'ok'); loadEmployees(true); })
-        .catch(function (err) { toast(err.message, 'err'); });
+        .catch(function (err) { showFieldError(f.email, err.message); toast(err.message, 'err'); });
     } else {
       rpc('create_employee', { p_actor: ACTOR, p_username: f.username.value, p_password: f.password.value, p_full_name: f.full_name.value, p_role: f.role.value, p_email: f.email ? f.email.value : null })
         .then(function () { closeModal('modalEmployee'); toast('Account created.', 'ok'); loadEmployees(true); })
-        .catch(function (err) { toast(err.message, 'err'); });
+        .catch(function (err) { showFieldError(f.email, err.message); toast(err.message, 'err'); });
     }
   });
 
@@ -1977,6 +2281,180 @@
       toast('Excel file exported.', 'ok');
     });
   }
+
+  // ---------------------------------------------------------------
+  // QUEUE
+  // ---------------------------------------------------------------
+  var qState = { serving: null, waiting: [], recent: [] };
+  var qPick = null;   // patient chosen in the Add-to-Queue modal
+
+  function loadQueue(silent) {
+    var tbody = el('queueTable').querySelector('tbody');
+    var done = beginLoad(tbody, 9, 4, silent);
+    rpc('queue_state', { p_actor: ACTOR }).then(function (s) {
+      done();
+      qState = s || { serving: null, waiting: [], recent: [] };
+      renderQueue();
+    }).catch(function (e) { done(); if (!silent) toast(e.message, 'err'); });
+  }
+
+  function qPatientCell(q) {
+    var name = q.full_name || q.display_name || '';
+    var no = q.patient_no ? '<span class="cat">' + esc(q.patient_no) + '</span>' : '';
+    return '<span class="nm">' + esc(name) + no + '</span>';
+  }
+
+  function renderQueue() {
+    var s = qState.serving;
+    var box = el('queueNow');
+    if (s) {
+      var meta = [];
+      if (s.patient_no) meta.push(s.patient_no);
+      if (s.age != null) meta.push(s.age + ' y/o');
+      if (s.gender) meta.push(s.gender);
+      box.innerHTML =
+        '<div class="qn-label">Now Serving</div>' +
+        '<div class="qn-ticket">' + esc(s.queue_no) + '</div>' +
+        '<div class="qn-name">' + esc(s.full_name || s.display_name) + '</div>' +
+        (meta.length ? '<div class="qn-meta">' + esc(meta.join(' \u00b7 ')) + '</div>' : '') +
+        (s.address ? '<div class="qn-meta">' + esc(s.address) + '</div>' : '') +
+        (s.contact ? '<div class="qn-meta">' + esc(s.contact) + '</div>' : '') +
+        '<div class="qn-win">Counter ' + esc(s.window_no || '1') + ' \u00b7 ' + (s.minutes || 0) + ' min</div>' +
+        '<div class="qn-actions">' +
+          '<button class="btn btn-primary btn-sm" id="qnDoneBtn">Mark Done</button>' +
+          '<button class="btn btn-ghost btn-sm" id="qnSkipBtn">Skip</button>' +
+        '</div>';
+      el('qnDoneBtn').addEventListener('click', function () { queueDone(s.id); });
+      el('qnSkipBtn').addEventListener('click', function () { queueSkip(s.id); });
+    } else {
+      box.innerHTML = '<div class="qn-label">Now Serving</div>' +
+        '<div class="qn-none">No one at the counter<small>Click \u201cNext Patient\u201d to call the first in line</small></div>';
+    }
+
+    var list = qState.waiting || [];
+    el('queueCount').textContent = list.length;
+    var tbody = el('queueTable').querySelector('tbody');
+    tbody.innerHTML = list.map(function (q) {
+      var demo = (q.age != null ? q.age + ' / ' + (q.gender || '-') : (q.gender || '-'));
+      return '<tr><td>' + q.position + '</td>' +
+        '<td><strong>' + esc(q.queue_no) + '</strong></td>' +
+        '<td>' + qPatientCell(q) + '</td>' +
+        '<td>' + esc(demo) + '</td>' +
+        '<td>' + esc(q.contact || '-') + '</td>' +
+        '<td>' + esc(q.address || '-') + '</td>' +
+        '<td>' + esc(q.purpose || '') + '</td>' +
+        '<td>' + (q.minutes || 0) + ' min</td>' +
+        '<td><span class="q-actions">' +
+          '<button class="btn btn-primary btn-sm" data-qcall="' + esc(q.id) + '">Call</button>' +
+          '<button class="btn btn-ghost btn-sm" data-qskip="' + esc(q.id) + '">Skip</button>' +
+        '</span></td></tr>';
+    }).join('') || '<tr><td colspan="9" class="muted" style="text-align:center;padding:22px">The waiting list is empty.</td></tr>';
+
+    tbody.querySelectorAll('[data-qcall]').forEach(function (b) {
+      b.addEventListener('click', function () { queueStart(b.getAttribute('data-qcall')); });
+    });
+    tbody.querySelectorAll('[data-qskip]').forEach(function (b) {
+      b.addEventListener('click', function () { queueSkip(b.getAttribute('data-qskip')); });
+    });
+
+    var recent = qState.recent || [];
+    var dt = el('queueDoneTable').querySelector('tbody');
+    dt.innerHTML = recent.map(function (r) {
+      var tag = r.status === 'skipped' ? ' <span class="badge" style="opacity:.7">skipped</span>' : '';
+      return '<tr><td><strong>' + esc(r.queue_no) + '</strong></td>' +
+        '<td>' + esc(r.full_name || r.display_name) + tag + '</td>' +
+        '<td>' + esc(r.patient_no || '-') + '</td>' +
+        '<td>' + esc(r.visit_no || '-') + '</td>' +
+        '<td>' + timeAgo(r.ended_at) + '</td></tr>';
+    }).join('') || '<tr><td colspan="5" class="muted" style="text-align:center;padding:18px">Nothing yet today.</td></tr>';
+  }
+
+  function afterQueue(msg) {
+    if (msg) toast(msg, 'ok');
+    loadQueue(true);
+    loaded.queue = true;
+  }
+
+  el('queueNextBtn').addEventListener('click', function () {
+    rpc('queue_next', { p_actor: ACTOR, p_window: '1' }).then(function (r) {
+      if (r && r.serving) afterQueue('Now serving ' + r.serving.queue_no + '.');
+      else { toast('The waiting list is empty.', 'warn'); loadQueue(true); }
+    }).catch(function (e) { toast(e.message, 'err'); });
+  });
+
+  function queueStart(id) {
+    rpc('queue_start', { p_actor: ACTOR, p_id: id, p_window: '1' })
+      .then(function () { afterQueue('Patient called.'); })
+      .catch(function (e) { toast(e.message, 'err'); });
+  }
+  function queueDone(id) {
+    rpc('queue_done', { p_actor: ACTOR, p_id: id || null })
+      .then(function () { afterQueue('Marked as done.'); })
+      .catch(function (e) { toast(e.message, 'err'); });
+  }
+  function queueSkip(id) {
+    rpc('queue_skip', { p_actor: ACTOR, p_id: id })
+      .then(function () { afterQueue('Ticket skipped.'); })
+      .catch(function (e) { toast(e.message, 'err'); });
+  }
+
+  // --- Add to Queue modal ---
+  el('queueAddBtn').addEventListener('click', function () {
+    qPick = null;
+    var f = el('queueForm');
+    f.reset();
+    el('queuePatientSearch').value = '';
+    renderQueuePicker('');
+    openModal('modalQueue');
+  });
+
+  function renderQueuePicker(query) {
+    var q = String(query || '').trim().toLowerCase();
+    var rows = (state.patients || []).filter(function (p) {
+      if (qPick && p.id === qPick.id) return true;
+      if (!q) return false;
+      return (p.full_name || '').toLowerCase().indexOf(q) >= 0 ||
+             (p.patient_no || '').toLowerCase().indexOf(q) >= 0;
+    }).slice(0, 40);
+    var box = el('queuePatientList');
+    if (!rows.length) {
+      box.innerHTML = '<div class="pick-group">' + (q ? 'No patient matched. Type a name below for a walk-in.' : 'Type at least one letter to search.') + '</div>';
+      return;
+    }
+    box.innerHTML = rows.map(function (p) {
+      var on = qPick && qPick.id === p.id;
+      return '<label class="pick" data-pid="' + esc(p.id) + '">' +
+        '<input type="radio" name="qp" ' + (on ? 'checked' : '') + '>' +
+        '<span class="nm">' + esc(p.full_name) + '<span class="cat">' + esc(p.patient_no) + '</span></span></label>';
+    }).join('');
+    box.querySelectorAll('.pick').forEach(function (row) {
+      row.addEventListener('click', function () {
+        var id = row.getAttribute('data-pid');
+        qPick = rows.filter(function (p) { return p.id === id; })[0] || null;
+      });
+    });
+  }
+
+  el('queuePatientSearch').addEventListener('input', function (e) {
+    renderQueuePicker(e.target.value);
+  });
+
+  el('queueForm').addEventListener('submit', function (e) {
+    e.preventDefault();
+    var f = e.target;
+    var walkin = (f.walkin.value || '').trim();
+    if (!qPick && !walkin) { toast('Choose a patient or type a walk-in name.', 'warn'); return; }
+    var params = {
+      p_actor: ACTOR,
+      p_visit_id: null,
+      p_name: qPick ? qPick.full_name : walkin,
+      p_purpose: 'Consultation'
+    };
+    rpc('join_queue', params).then(function (r) {
+      closeModal('modalQueue');
+      afterQueue('Ticket ' + r.queue_no + ' added' + (r.waiting ? ' \u00b7 ' + r.waiting + ' waiting.' : '.'));
+    }).catch(function (err) { toast(err.message, 'err'); });
+  });
 
   // ---------------------------------------------------------------
   // Boot

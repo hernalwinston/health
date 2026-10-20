@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Now Serving — Dr. Mendoza Multi-Specialty Clinic</title>
+  <meta name="description" content="Live waiting queue for Dr. Mendoza Multi-Specialty Clinic.">
+  <link rel="icon" href="images/mendoza.png" type="image/png">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap">
+
+  <style>
+    :root{
+      --bg:#071a2f; --bg2:#0b2545; --panel:#0f2c4d; --line:#1e446f;
+      --text:#eaf2fb; --muted:#9fb8d4; --brand:#37a3ff; --brand2:#1d7fd6;
+      --ok:#2fbf71; --warn:#f4b740;
+      --shadow:0 18px 50px rgba(2,10,22,.55);
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0;font-family:'Inter',system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+      color:var(--text);background:
+        radial-gradient(1200px 700px at 15% -10%,#12406e 0%,transparent 55%),
+        radial-gradient(1000px 600px at 100% 0%,#0d3a63 0%,transparent 50%),
+        linear-gradient(160deg,var(--bg) 0%,var(--bg2) 100%);
+      min-height:100vh;display:flex;flex-direction:column;
+      -webkit-font-smoothing:antialiased;
+    }
+
+    /* ---------- header ---------- */
+    header{
+      display:flex;align-items:center;gap:18px;
+      padding:20px 34px;background:transparent;border-bottom:none;
+    }
+    header img{width:83px;height:83px;object-fit:contain}
+    .brand{display:flex;flex-direction:column;line-height:1.12}
+    .brand strong{font-family:'Poppins',sans-serif;font-size:30px;font-weight:700;letter-spacing:-.4px}
+    .brand span{font-size:14px;color:var(--muted);font-weight:500}
+    .clock{margin-left:auto;text-align:right}
+    .clock .t{font-family:'Poppins',sans-serif;font-size:30px;font-weight:600;font-variant-numeric:tabular-nums}
+    .clock .d{font-size:13px;color:var(--muted)}
+
+    /* ---------- layout ---------- */
+    main{flex:1;display:grid;grid-template-columns:1.15fr .85fr;gap:26px;padding:26px 34px 30px;min-height:0}
+    .panel{background:linear-gradient(180deg,rgba(18,52,88,.85),rgba(13,38,68,.85));
+      border:1px solid var(--line);border-radius:22px;box-shadow:var(--shadow);
+      display:flex;flex-direction:column;min-height:0;overflow:hidden}
+
+    /* ---------- now serving ---------- */
+    .ns-scroll{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
+      padding:28px;text-align:center;min-height:0}
+    .ns-label{font-family:'Poppins',sans-serif;font-size:clamp(18px,2.2vh,26px);font-weight:600;
+      letter-spacing:6px;text-transform:uppercase;color:var(--brand)}
+    .ns-ticket{font-family:'Poppins',sans-serif;font-weight:700;line-height:.95;
+      font-size:clamp(90px,20vh,220px);letter-spacing:-4px;margin:6px 0 2px;
+      color:#fff;text-shadow:0 10px 40px rgba(55,163,255,.45);
+      animation:pop .5s cubic-bezier(.2,.9,.3,1.3)}
+    @keyframes pop{0%{transform:scale(.86);opacity:.2}65%{transform:scale(1.04)}100%{transform:scale(1);opacity:1}}
+    .ns-name{font-family:'Poppins',sans-serif;font-size:clamp(26px,4.4vh,52px);font-weight:600;margin-top:4px}
+    .ns-window{margin-top:18px;display:inline-flex;align-items:center;gap:10px;
+      background:rgba(55,163,255,.14);border:1px solid rgba(55,163,255,.4);
+      color:#bfe0ff;padding:10px 22px;border-radius:999px;
+      font-family:'Poppins',sans-serif;font-size:clamp(16px,2vh,22px);font-weight:600}
+    .ns-empty{font-family:'Poppins',sans-serif;font-size:clamp(26px,4vh,44px);font-weight:600;color:var(--muted)}
+    .ns-empty small{display:block;font-size:16px;font-weight:400;color:#7c96b4;margin-top:8px;font-family:'Inter',sans-serif}
+
+    /* ---------- waiting list ---------- */
+    .wl-head{display:flex;align-items:center;gap:12px;padding:20px 24px 12px}
+    .wl-head h2{font-family:'Poppins',sans-serif;font-size:22px;margin:0;font-weight:600}
+    .wl-count{margin-left:auto;background:rgba(55,163,255,.16);border:1px solid rgba(55,163,255,.35);
+      color:#bfe0ff;font-weight:600;font-size:14px;padding:5px 14px;border-radius:999px}
+    .wl{list-style:none;margin:0;padding:0 14px 18px;overflow-y:auto;flex:1;min-height:0}
+    .wl li{display:flex;align-items:center;gap:16px;padding:14px 14px;border-radius:14px;
+      margin-bottom:8px;background:rgba(255,255,255,.03);border:1px solid transparent;
+      transition:background .25s,border-color .25s,transform .25s}
+    .wl li.next{border-color:rgba(47,191,113,.5);background:rgba(47,191,113,.12)}
+    .wl .pos{width:38px;height:38px;flex:0 0 38px;border-radius:11px;display:grid;place-items:center;
+      font-family:'Poppins',sans-serif;font-weight:700;font-size:17px;color:#0b2440;background:var(--brand)}
+    .wl li.next .pos{background:var(--ok)}
+    .wl .tk{font-family:'Poppins',sans-serif;font-size:clamp(19px,2.4vh,30px);font-weight:700;min-width:112px;font-variant-numeric:tabular-nums}
+    .wl .nm{font-size:clamp(15px,1.8vh,21px);color:#dbe8f7;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .wl .tag{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:1px}
+    .wl-empty{padding:26px 24px;color:var(--muted);font-size:16px}
+
+    /* ---------- footer ticker ---------- */
+    .ticker{display:flex;align-items:center;gap:14px;padding:12px 34px;border-top:1px solid var(--line);
+      background:rgba(9,28,50,.72);font-size:14px;color:var(--muted)}
+    .dot{width:9px;height:9px;border-radius:50%;background:var(--ok);box-shadow:0 0 0 4px rgba(47,191,113,.18);
+      animation:blink 1.8s infinite}
+    .dot.off{background:var(--warn);box-shadow:0 0 0 4px rgba(244,183,64,.18)}
+    @keyframes blink{0%,100%{opacity:1}50%{opacity:.35}}
+    .ticker .last{margin-left:auto;color:#cfe3f7}
+
+    @media (max-width:900px){
+      main{grid-template-columns:1fr;padding:16px}
+      header{padding:14px 18px}.clock .t{font-size:22px}.brand strong{font-size:22px}header img{width:68px;height:68px}
+      .wl .tk{min-width:88px}
+    }
+    @media print{
+      body{background:#fff;color:#000}
+      .panel{box-shadow:none;border-color:#ccc}
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <img src="images/mendoza.png" alt="Dr. Mendoza Multi-Specialty Clinic logo">
+    <div class="brand">
+      <strong>Dr. Mendoza</strong>
+      <span>Multi-Specialty Clinic &middot; Waiting Queue</span>
+    </div>
+    <div class="clock">
+      <div class="t" id="clock">--:--</div>
+      <div class="d" id="today">&nbsp;</div>
+    </div>
+  </header>
+
+  <main>
+    <!-- LEFT: Now Serving -->
+    <section class="panel">
+      <div class="ns-scroll" id="nsWrap">
+        <div class="ns-label">Now Serving</div>
+        <div class="ns-empty" id="nsEmpty">No one is being served right now
+          <small>The next patient will appear here</small>
+        </div>
+      </div>
+    </section>
+
+    <!-- RIGHT: Waiting -->
+    <section class="panel">
+      <div class="wl-head">
+        <h2>Waiting</h2>
+        <span class="wl-count" id="waitCount">0</span>
+      </div>
+      <div class="wl-empty" id="waitEmpty">The waiting list is empty.</div>
+      <ul class="wl" id="waitList"></ul>
+    </section>
+  </main>
+
+  <footer class="ticker">
+    <span class="dot" id="liveDot"></span>
+    <span id="liveText">Connecting&hellip;</span>
+    <span class="last" id="lastCalled"></span>
+  </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.118.0/dist/umd/supabase.js"></script>
+  <script src="js/config.js"></script>
+  <script>
+    (function () {
+      var POLL_MS = 4000;
+      var nsWrap = document.getElementById('nsWrap');
+      var waitList = document.getElementById('waitList');
+      var waitCount = document.getElementById('waitCount');
+      var waitEmpty = document.getElementById('waitEmpty');
+      var liveDot = document.getElementById('liveDot');
+      var liveText = document.getElementById('liveText');
+      var lastCalled = document.getElementById('lastCalled');
+      var lastTicket = null;
+
+      function esc(s) {
+        return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+          return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+        });
+      }
+
+      function tick() {
+        var now = new Date();
+        var h = now.getHours(), m = String(now.getMinutes()).padStart(2, '0');
+        var ampm = h >= 12 ? 'PM' : 'AM';
+        h = h % 12; if (h === 0) h = 12;
+        document.getElementById('clock').textContent = h + ':' + m + ' ' + ampm;
+        document.getElementById('today').textContent = now.toLocaleDateString('en-PH', {
+          weekday: 'long', month: 'long', day: 'numeric'
+        });
+      }
+      tick(); setInterval(tick, 1000);
+
+      function renderNs(s) {
+        if (!s || !s.queue_no) {
+          nsWrap.innerHTML = '<div class="ns-label">Now Serving</div>' +
+            '<div class="ns-empty">No one is being served right now' +
+            '<small>The next patient will appear here</small></div>';
+          return;
+        }
+        nsWrap.innerHTML =
+          '<div class="ns-label">Now Serving</div>' +
+          '<div class="ns-ticket">' + esc(s.queue_no) + '</div>' +
+          '<div class="ns-name">' + esc(s.display_name) + '</div>' +
+          '<div class="ns-window">Counter ' + esc(s.window_no || '1') + '</div>';
+        if (s.queue_no !== lastTicket) {
+          lastTicket = s.queue_no;
+          try {
+            var ac = getAudioCtx();
+            if (ac) {
+              var o = ac.createOscillator(), g = ac.createGain();
+              o.connect(g); g.connect(ac.destination);
+              o.type = 'sine'; o.frequency.value = 880;
+              g.gain.setValueAtTime(.0001, ac.currentTime);
+              g.gain.exponentialRampToValueAtTime(.15, ac.currentTime + .05);
+              g.gain.exponentialRampToValueAtTime(.0001, ac.currentTime + .9);
+              o.start(); o.stop(ac.currentTime + .95);
+            }
+          } catch (e) { /* audio is optional */ }
+        }
+      }
+
+      var audioCtx = null;
+      function getAudioCtx() {
+        if (audioCtx) return audioCtx;
+        var AC = window.AudioContext || window.webkitAudioContext;
+        if (!AC) return null;
+        try { audioCtx = new AC(); } catch (e) { return null; }
+        return audioCtx;
+      }
+      // Browsers require a user gesture before sound; unlock on first click.
+      document.addEventListener('click', function () {
+        var ac = getAudioCtx();
+        if (ac && ac.state === 'suspended') ac.resume();
+      }, { once: true });
+
+      function renderWaiting(list) {
+        list = list || [];
+        waitCount.textContent = list.length;
+        if (!list.length) {
+          waitList.innerHTML = '';
+          waitEmpty.style.display = 'block';
+          return;
+        }
+        waitEmpty.style.display = 'none';
+        waitList.innerHTML = list.map(function (q, i) {
+          return '<li' + (i === 0 ? ' class="next"' : '') + '>' +
+            '<span class="pos">' + (q.position || i + 1) + '</span>' +
+            '<span class="tk">' + esc(q.queue_no) + '</span>' +
+            '<span class="nm">' + esc(q.display_name) +
+              '<span class="tag"> &middot; ' + esc(q.purpose || 'Laboratory') + '</span></span>' +
+            '</li>';
+        }).join('');
+      }
+
+      function setLive(ok, msg) {
+        liveDot.classList.toggle('off', !ok);
+        liveText.textContent = msg;
+      }
+
+      function refresh() {
+        if (!window.db) { setLive(false, 'Cannot reach the server'); return; }
+        window.db.rpc('get_queue').then(function (res) {
+          if (res.error) throw res.error;
+          var d = res.data || {};
+          renderNs(d.now_serving);
+          renderWaiting(d.waiting);
+          setLive(true, 'Live \u00b7 updated ' + (d.updated_at || ''));
+          lastCalled.textContent = d.last_called && d.last_called.queue_no
+            ? 'Last called: ' + d.last_called.queue_no : '';
+        }).catch(function () {
+          setLive(false, 'Reconnecting\u2026');
+        });
+      }
+
+      refresh();
+      setInterval(refresh, POLL_MS);
+    })();
+  </script>
+</body>
+</html>
