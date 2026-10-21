@@ -13,18 +13,18 @@
 
   <style>
     :root{
-      --bg:#071a2f; --bg2:#0b2545; --panel:#0f2c4d; --line:#1e446f;
-      --text:#eaf2fb; --muted:#9fb8d4; --brand:#37a3ff; --brand2:#1d7fd6;
-      --ok:#2fbf71; --warn:#f4b740;
-      --shadow:0 18px 50px rgba(2,10,22,.55);
+      --bg:#ffffff; --bg2:#f4f8fd; --panel:#ffffff; --line:#e2eaf4;
+      --text:#0b2545; --muted:#6b8199; --brand:#0a66d6; --brand2:#0a56ba;
+      --ok:#16b564; --warn:#d98a00;
+      --shadow:0 10px 34px rgba(15,45,80,.10);
     }
     *{box-sizing:border-box}
     html,body{height:100%}
     body{
       margin:0;font-family:'Inter',system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
       color:var(--text);background:
-        radial-gradient(1200px 700px at 15% -10%,#12406e 0%,transparent 55%),
-        radial-gradient(1000px 600px at 100% 0%,#0d3a63 0%,transparent 50%),
+        radial-gradient(1100px 620px at 12% -12%,#eaf3ff 0%,transparent 55%),
+        radial-gradient(900px 560px at 100% 0%,#eef6ff 0%,transparent 50%),
         linear-gradient(160deg,var(--bg) 0%,var(--bg2) 100%);
       min-height:100vh;display:flex;flex-direction:column;
       -webkit-font-smoothing:antialiased;
@@ -37,15 +37,15 @@
     }
     header img{width:83px;height:83px;object-fit:contain}
     .brand{display:flex;flex-direction:column;line-height:1.12}
-    .brand strong{font-family:'Poppins',sans-serif;font-size:30px;font-weight:700;letter-spacing:-.4px}
+    .brand strong{font-family:'Poppins',sans-serif;font-size:30px;font-weight:700;letter-spacing:-.4px;color:var(--text)}
     .brand span{font-size:14px;color:var(--muted);font-weight:500}
     .clock{margin-left:auto;text-align:right}
-    .clock .t{font-family:'Poppins',sans-serif;font-size:30px;font-weight:600;font-variant-numeric:tabular-nums}
+    .clock .t{font-family:'Poppins',sans-serif;font-size:30px;font-weight:600;font-variant-numeric:tabular-nums;color:var(--text)}
     .clock .d{font-size:13px;color:var(--muted)}
 
     /* ---------- layout ---------- */
     main{flex:1;display:grid;grid-template-columns:1.15fr .85fr;gap:26px;padding:26px 34px 30px;min-height:0}
-    .panel{background:linear-gradient(180deg,rgba(18,52,88,.85),rgba(13,38,68,.85));
+    .panel{background:var(--panel);
       border:1px solid var(--line);border-radius:22px;box-shadow:var(--shadow);
       display:flex;flex-direction:column;min-height:0;overflow:hidden}
 
@@ -56,43 +56,43 @@
       letter-spacing:6px;text-transform:uppercase;color:var(--brand)}
     .ns-ticket{font-family:'Poppins',sans-serif;font-weight:700;line-height:.95;
       font-size:clamp(90px,20vh,220px);letter-spacing:-4px;margin:6px 0 2px;
-      color:#fff;text-shadow:0 10px 40px rgba(55,163,255,.45);
+      color:var(--brand2);text-shadow:0 8px 30px rgba(10,102,214,.18);
       animation:pop .5s cubic-bezier(.2,.9,.3,1.3)}
     @keyframes pop{0%{transform:scale(.86);opacity:.2}65%{transform:scale(1.04)}100%{transform:scale(1);opacity:1}}
-    .ns-name{font-family:'Poppins',sans-serif;font-size:clamp(26px,4.4vh,52px);font-weight:600;margin-top:4px}
+    .ns-name{font-family:'Poppins',sans-serif;font-size:clamp(26px,4.4vh,52px);font-weight:600;margin-top:4px;color:var(--text)}
     .ns-window{margin-top:18px;display:inline-flex;align-items:center;gap:10px;
-      background:rgba(55,163,255,.14);border:1px solid rgba(55,163,255,.4);
-      color:#bfe0ff;padding:10px 22px;border-radius:999px;
+      background:#eaf3ff;border:1px solid #cfe2fb;
+      color:var(--brand2);padding:10px 22px;border-radius:999px;
       font-family:'Poppins',sans-serif;font-size:clamp(16px,2vh,22px);font-weight:600}
     .ns-empty{font-family:'Poppins',sans-serif;font-size:clamp(26px,4vh,44px);font-weight:600;color:var(--muted)}
-    .ns-empty small{display:block;font-size:16px;font-weight:400;color:#7c96b4;margin-top:8px;font-family:'Inter',sans-serif}
+    .ns-empty small{display:block;font-size:16px;font-weight:400;color:#9aabbf;margin-top:8px;font-family:'Inter',sans-serif}
 
     /* ---------- waiting list ---------- */
     .wl-head{display:flex;align-items:center;gap:12px;padding:20px 24px 12px}
-    .wl-head h2{font-family:'Poppins',sans-serif;font-size:22px;margin:0;font-weight:600}
-    .wl-count{margin-left:auto;background:rgba(55,163,255,.16);border:1px solid rgba(55,163,255,.35);
-      color:#bfe0ff;font-weight:600;font-size:14px;padding:5px 14px;border-radius:999px}
+    .wl-head h2{font-family:'Poppins',sans-serif;font-size:22px;margin:0;font-weight:600;color:var(--text)}
+    .wl-count{margin-left:auto;background:#eaf3ff;border:1px solid #cfe2fb;
+      color:var(--brand2);font-weight:600;font-size:14px;padding:5px 14px;border-radius:999px}
     .wl{list-style:none;margin:0;padding:0 14px 18px;overflow-y:auto;flex:1;min-height:0}
     .wl li{display:flex;align-items:center;gap:16px;padding:14px 14px;border-radius:14px;
-      margin-bottom:8px;background:rgba(255,255,255,.03);border:1px solid transparent;
+      margin-bottom:8px;background:#f7fafe;border:1px solid #edf3fa;
       transition:background .25s,border-color .25s,transform .25s}
-    .wl li.next{border-color:rgba(47,191,113,.5);background:rgba(47,191,113,.12)}
+    .wl li.next{border-color:#bfe6cf;background:#eafaf1}
     .wl .pos{width:38px;height:38px;flex:0 0 38px;border-radius:11px;display:grid;place-items:center;
-      font-family:'Poppins',sans-serif;font-weight:700;font-size:17px;color:#0b2440;background:var(--brand)}
+      font-family:'Poppins',sans-serif;font-weight:700;font-size:17px;color:#fff;background:var(--brand)}
     .wl li.next .pos{background:var(--ok)}
-    .wl .tk{font-family:'Poppins',sans-serif;font-size:clamp(19px,2.4vh,30px);font-weight:700;min-width:112px;font-variant-numeric:tabular-nums}
-    .wl .nm{font-size:clamp(15px,1.8vh,21px);color:#dbe8f7;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-    .wl .tag{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:1px}
+    .wl .tk{font-family:'Poppins',sans-serif;font-size:clamp(19px,2.4vh,30px);font-weight:700;min-width:112px;font-variant-numeric:tabular-nums;color:var(--text)}
+    .wl .nm{font-size:clamp(15px,1.8vh,21px);color:#2b4763;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:600}
+    .wl .tag{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;font-weight:500}
     .wl-empty{padding:26px 24px;color:var(--muted);font-size:16px}
 
     /* ---------- footer ticker ---------- */
     .ticker{display:flex;align-items:center;gap:14px;padding:12px 34px;border-top:1px solid var(--line);
-      background:rgba(9,28,50,.72);font-size:14px;color:var(--muted)}
-    .dot{width:9px;height:9px;border-radius:50%;background:var(--ok);box-shadow:0 0 0 4px rgba(47,191,113,.18);
+      background:#f7fafe;font-size:14px;color:var(--muted)}
+    .dot{width:9px;height:9px;border-radius:50%;background:var(--ok);box-shadow:0 0 0 4px rgba(22,181,100,.16);
       animation:blink 1.8s infinite}
-    .dot.off{background:var(--warn);box-shadow:0 0 0 4px rgba(244,183,64,.18)}
+    .dot.off{background:var(--warn);box-shadow:0 0 0 4px rgba(217,138,0,.16)}
     @keyframes blink{0%,100%{opacity:1}50%{opacity:.35}}
-    .ticker .last{margin-left:auto;color:#cfe3f7}
+    .ticker .last{margin-left:auto;color:#4a6280}
 
     @media (max-width:900px){
       main{grid-template-columns:1fr;padding:16px}
@@ -102,6 +102,7 @@
     @media print{
       body{background:#fff;color:#000}
       .panel{box-shadow:none;border-color:#ccc}
+      .ticker{display:none}
     }
   </style>
 </head>
